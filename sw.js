@@ -1,4 +1,4 @@
-const CACHE_NAME = "ecoquest-shell-v2";
+const CACHE_NAME = "ecoquest-shell-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,10 @@ const APP_SHELL = [
   "./js/app.js",
   "./js/state.js",
   "./js/gamification.js",
+  "./js/views/aujourdhui.js",
+  "./js/views/defis.js",
+  "./js/views/foyer.js",
+  "./js/views/profil.js",
   "./data/gestes.json",
   "./manifest.webmanifest",
   "./icons/icon-192.png",

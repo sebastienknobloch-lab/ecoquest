@@ -1,23 +1,27 @@
-export const POINTS_PAR_GESTE = 10;
+export const POINTS_PAR_DIFFICULTE = { 1: 10, 2: 20, 3: 30 };
 
-export function cocherGeste(state, gesteId) {
-  if (state.completedToday.includes(gesteId)) {
+export function pointsPourDifficulte(difficulte) {
+  return POINTS_PAR_DIFFICULTE[difficulte];
+}
+
+export function cocherGeste(state, geste) {
+  if (state.completedToday.includes(geste.id)) {
     return state;
   }
   return {
     ...state,
-    points: state.points + POINTS_PAR_GESTE,
-    completedToday: [...state.completedToday, gesteId],
+    points: state.points + geste.points,
+    completedToday: [...state.completedToday, geste.id],
   };
 }
 
-export function decocherGeste(state, gesteId) {
-  if (!state.completedToday.includes(gesteId)) {
+export function decocherGeste(state, geste) {
+  if (!state.completedToday.includes(geste.id)) {
     return state;
   }
   return {
     ...state,
-    points: state.points - POINTS_PAR_GESTE,
-    completedToday: state.completedToday.filter((id) => id !== gesteId),
+    points: state.points - geste.points,
+    completedToday: state.completedToday.filter((id) => id !== geste.id),
   };
 }

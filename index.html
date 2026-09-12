@@ -19,14 +19,29 @@
 <body>
   <header class="app-header">
     <h1>🌱 EcoQuest</h1>
-    <p class="points" data-points>0 point</p>
+    <p class="app-status" data-app-status>Chargement…</p>
   </header>
 
-  <main class="gestes">
-    <p class="tagline">Coche les éco-gestes réalisés aujourd'hui.</p>
-    <ul class="geste-list" data-geste-list></ul>
-    <p class="status" data-status>Chargement…</p>
-  </main>
+  <main class="view-root" data-view-root></main>
+
+  <nav class="tab-bar" data-tab-bar aria-label="Navigation principale">
+    <button class="tab-btn" type="button" data-tab="aujourdhui">
+      <span class="tab-icon" aria-hidden="true">📋</span>
+      <span class="tab-label">Aujourd'hui</span>
+    </button>
+    <button class="tab-btn" type="button" data-tab="defis">
+      <span class="tab-icon" aria-hidden="true">🏆</span>
+      <span class="tab-label">Défis</span>
+    </button>
+    <button class="tab-btn" type="button" data-tab="foyer">
+      <span class="tab-icon" aria-hidden="true">🏠</span>
+      <span class="tab-label">Foyer</span>
+    </button>
+    <button class="tab-btn" type="button" data-tab="profil">
+      <span class="tab-icon" aria-hidden="true">🙂</span>
+      <span class="tab-label">Profil</span>
+    </button>
+  </nav>
 
   <script type="module" src="js/app.js"></script>
 </body>

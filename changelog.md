@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-12 — Session 5 : Navigation à 4 onglets + catalogue de 30 gestes
+- **Navigation** : ajout d'une barre basse fixe à 4 onglets (Aujourd'hui, Défis, Foyer, Profil), cibles tactiles ≥ 44px, `padding-bottom: env(safe-area-inset-bottom)` pour l'encoche iOS, onglet actif distingué par couleur ET fond (pas seulement la couleur, pour l'accessibilité).
+- Ajout d'un routeur minimal dans `js/app.js` (aucun framework) et de 4 modules de vue : `js/views/aujourdhui.js`, `js/views/defis.js`, `js/views/foyer.js`, `js/views/profil.js`. Défis/Foyer/Profil affichent un titre et « Bientôt » en attendant leur contenu.
+- L'écran existant (gestes + points) devient l'onglet Aujourd'hui, sans régression : mêmes gestes cochables, mêmes points, même état de service worker (déplacé dans l'en-tête, séparé du statut de chargement des gestes).
+- `js/state.js` : nouvelle propriété `activeTab` (défaut `"aujourdhui"`) mémorisant l'onglet actif, ajoutée avec valeur par défaut dans `loadState()` (migration douce, aucune perte des points/gestes déjà enregistrés).
+- **Catalogue** : `data/gestes.json` étendu de 5 à 30 éco-gestes, répartis en 5 catégories (énergie, alimentation, déplacements, déchets, numérique) de 6 gestes chacune. Chaque geste a désormais `libelle` (remplace `label`), `difficulte` (1 à 3), `points` (barème 10/20/30 selon la difficulté), `co2_evite_g` (entier) et `source` (ADEME ou Impact CO2). Les gestes dont l'ordre de grandeur du CO2 n'est pas sûr portent `"a_verifier": true` — à vérifier avant d'afficher ces chiffres comme définitifs. Les 5 gestes de la session 4 sont conservés avec leurs ids d'origine.
+- `js/gamification.js` : `cocherGeste()`/`decocherGeste()` prennent désormais le geste complet et utilisent ses `points` (au lieu d'une valeur fixe de 10), sans double comptage. Ajout de `pointsPourDifficulte()` et du barème `POINTS_PAR_DIFFICULTE`.
+- Onglet Aujourd'hui : les gestes sont groupés par catégorie dans des sections repliables (`<details>`), seule la première (Énergie) ouverte par défaut.
+- `tests/points.test.js` : mis à jour pour les points liés à la difficulté, et étendu avec des tests de validité du catalogue (30 gestes, ids uniques, champs requis, catégories/difficultés valides, 6 gestes par catégorie).
+- `sw.js` : cache renommé `ecoquest-shell-v3` et app shell complété avec `js/views/*.js`, pour forcer le rechargement de la nouvelle version sur les téléphones déjà installés.
+
 ## 2026-09-12 — Session 4 : Premier écran de gestes + points
 - Ajout de `data/gestes.json` : 5 éco-gestes du quotidien (lumière, douche courte, vélo/marche, gourde réutilisable, tri des déchets), chacun avec un CO2 évité estimé et une `source` citant ADEME ou Impact CO2.
 - Ajout de `js/state.js` : `loadState()`/`saveState()` sur `localStorage` (clé `ecoquest-v1`), avec valeurs par défaut fusionnées pour toute nouvelle propriété (migration douce, aucune perte de données existantes).

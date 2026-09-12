@@ -5,6 +5,7 @@ const STORAGE_KEY = "ecoquest-v1";
 const DEFAULT_STATE = {
   points: 0,
   completedToday: [],
+  activeTab: "aujourdhui",
 };
 
 export function loadState() {
