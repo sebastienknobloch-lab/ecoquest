@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-12 — Session 7 : Niveaux de progression
+- `js/gamification.js` : ajout de `SEUILS_NIVEAUX` (0/50/150/300/500, 5 niveaux) et de `calculerNiveau(points)`, qui renvoie le niveau actuel (1 à 5), les points restants avant le niveau suivant et le pourcentage de progression dans le niveau courant. Le niveau **n'est jamais stocké dans l'état** : toujours recalculé à la volée à partir de `state.points`, pour éviter tout double comptage avec les points.
+- Onglet Aujourd'hui (`js/views/aujourdhui.js`) : ajout en haut de l'écran d'un bloc « Niveau X » avec une barre de progression visuelle vers le niveau suivant (ou « Niveau maximum atteint ! » au niveau 5), mise à jour à chaque geste coché/décoché en même temps que le total de points.
+- `css/app.css` : styles de la barre de niveau (`.niveau-bloc`, `.niveau-barre`, `.niveau-barre-remplissage`).
+- Ajout de `tests/niveaux.test.js` : vérifie les seuils, le passage exact de niveau à chaque seuil, le calcul des points restants et du pourcentage de progression, ainsi que le comportement au niveau maximum.
+- `sw.js` : cache renommé `ecoquest-shell-v5` pour forcer la mise à jour sur les téléphones déjà installés.
+
 ## 2026-09-12 — Session 6 : 3 gestes du jour (sélection déterministe)
 - **Onglet Aujourd'hui repensé** : au lieu d'afficher les 30 gestes d'un coup, l'écran met en avant « Tes 3 gestes du jour », un geste piochés dans 3 catégories différentes.
 - La sélection est **déterministe par date** (nouvelle fonction `selectionDuJour()` dans `js/gamification.js`, PRNG déterministe seedé par la date AAAA-MM-JJ) : les mêmes 3 gestes s'affichent à chaque rechargement dans la journée, et le tirage change à minuit — jamais de tirage aléatoire à chaque visite.

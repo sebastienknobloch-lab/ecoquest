@@ -4,6 +4,33 @@ export function pointsPourDifficulte(difficulte) {
   return POINTS_PAR_DIFFICULTE[difficulte];
 }
 
+// Seuils de points pour atteindre chaque niveau (index 0 → niveau 1, etc).
+// Le niveau n'est jamais stocké dans l'état : toujours recalculé à partir de
+// state.points, pour éviter tout double comptage entre points et niveau.
+export const SEUILS_NIVEAUX = [0, 50, 150, 300, 500];
+
+// Calcule le niveau actuel (1 à SEUILS_NIVEAUX.length) à partir du total de points,
+// ainsi que les points restants et le pourcentage de progression avant le niveau suivant.
+export function calculerNiveau(points) {
+  let niveau = 1;
+  for (let i = SEUILS_NIVEAUX.length - 1; i >= 0; i--) {
+    if (points >= SEUILS_NIVEAUX[i]) {
+      niveau = i + 1;
+      break;
+    }
+  }
+
+  const seuilActuel = SEUILS_NIVEAUX[niveau - 1];
+  const estNiveauMax = niveau >= SEUILS_NIVEAUX.length;
+  const seuilSuivant = estNiveauMax ? null : SEUILS_NIVEAUX[niveau];
+  const pointsRestants = estNiveauMax ? 0 : Math.max(0, seuilSuivant - points);
+  const pourcentage = estNiveauMax
+    ? 100
+    : Math.max(0, Math.min(100, Math.round(((points - seuilActuel) / (seuilSuivant - seuilActuel)) * 100)));
+
+  return { niveau, seuilActuel, seuilSuivant, pointsRestants, pourcentage, estNiveauMax };
+}
+
 export function cocherGeste(state, geste, dateISO) {
   const cochesDuJour = state.gestesCochesParDate[dateISO] || [];
   if (cochesDuJour.includes(geste.id)) {

@@ -1,4 +1,4 @@
-import { cocherGeste, decocherGeste, selectionDuJour } from "../gamification.js";
+import { calculerNiveau, cocherGeste, decocherGeste, selectionDuJour } from "../gamification.js";
 import { dateDuJour } from "../state.js";
 
 const CATEGORIES = [
@@ -20,6 +20,32 @@ export function renderAujourdhui(container, initialState, persist) {
 
   const section = document.createElement("section");
   section.className = "gestes";
+
+  const niveauBloc = document.createElement("div");
+  niveauBloc.className = "niveau-bloc";
+
+  const niveauEntete = document.createElement("div");
+  niveauEntete.className = "niveau-entete";
+
+  const niveauBadge = document.createElement("span");
+  niveauBadge.className = "niveau-badge";
+
+  const niveauDetail = document.createElement("span");
+  niveauDetail.className = "niveau-detail";
+
+  niveauEntete.append(niveauBadge, niveauDetail);
+
+  const niveauBarre = document.createElement("div");
+  niveauBarre.className = "niveau-barre";
+  niveauBarre.setAttribute("role", "progressbar");
+  niveauBarre.setAttribute("aria-valuemin", "0");
+  niveauBarre.setAttribute("aria-valuemax", "100");
+
+  const niveauRemplissage = document.createElement("div");
+  niveauRemplissage.className = "niveau-barre-remplissage";
+  niveauBarre.append(niveauRemplissage);
+
+  niveauBloc.append(niveauEntete, niveauBarre);
 
   const pointsEl = document.createElement("p");
   pointsEl.className = "points-total";
@@ -50,13 +76,26 @@ export function renderAujourdhui(container, initialState, persist) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
-  section.append(pointsEl, tagline, duJourTitre, duJourListe, catalogueDetails, statusEl);
+  section.append(niveauBloc, pointsEl, tagline, duJourTitre, duJourListe, catalogueDetails, statusEl);
   container.append(section);
 
   function renderPoints() {
     pointsEl.textContent = `${state.points} point${state.points > 1 ? "s" : ""}`;
   }
+
+  function renderNiveau() {
+    const { niveau, pointsRestants, pourcentage, estNiveauMax } = calculerNiveau(state.points);
+    niveauBadge.textContent = `Niveau ${niveau}`;
+    niveauDetail.textContent = estNiveauMax
+      ? "Niveau maximum atteint !"
+      : `${pointsRestants} point${pointsRestants > 1 ? "s" : ""} avant le niveau ${niveau + 1}`;
+    niveauRemplissage.style.width = `${pourcentage}%`;
+    niveauBarre.setAttribute("aria-valuenow", String(pourcentage));
+    niveauBarre.setAttribute("aria-label", `Progression niveau ${niveau}`);
+  }
+
   renderPoints();
+  renderNiveau();
 
   function estCoche(geste, dateISO) {
     return (state.gestesCochesParDate[dateISO] || []).includes(geste.id);
@@ -66,6 +105,7 @@ export function renderAujourdhui(container, initialState, persist) {
     state = coche ? cocherGeste(state, geste, dateISO) : decocherGeste(state, geste, dateISO);
     persist(state);
     renderPoints();
+    renderNiveau();
     idAAnimer = coche ? geste.id : null;
     afficherTout();
   }
