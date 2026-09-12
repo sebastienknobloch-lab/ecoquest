@@ -72,6 +72,54 @@ html, body {
   color: #3a3a3a;
 }
 
+.section-titre {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--eco-green-dark);
+}
+
+.geste-list--du-jour {
+  margin-bottom: 24px;
+}
+
+.catalogue-complet {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.catalogue-complet-titre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--eco-green-dark);
+  list-style: none;
+}
+
+.catalogue-complet-titre::-webkit-details-marker {
+  display: none;
+}
+
+.catalogue-complet-titre::after {
+  content: "▸";
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.catalogue-complet[open] .catalogue-complet-titre::after {
+  transform: rotate(90deg);
+}
+
+.catalogue-complet .categories {
+  padding: 0 12px 12px;
+}
+
 .categories {
   display: flex;
   flex-direction: column;
@@ -165,6 +213,29 @@ html, body {
   color: #6a6a6a;
   font-size: 0.75rem;
   line-height: 1.4;
+}
+
+/* Micro-animation sobre à la validation d'un geste du jour (désactivée si
+   l'utilisateur préfère moins d'animations). */
+@keyframes geste-validation {
+  0% {
+    transform: scale(1);
+    background-color: rgba(46, 125, 50, 0.25);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+}
+
+.geste--du-jour.geste--validee {
+  animation: geste-validation 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geste--du-jour.geste--validee {
+    animation: none;
+  }
 }
 
 .status {

@@ -9,9 +9,10 @@ const gestes = JSON.parse(
   readFileSync(path.join(__dirname, "../data/gestes.json"), "utf-8")
 );
 const CATEGORIES_VALIDES = ["energie", "alimentation", "deplacements", "dechets", "numerique"];
+const AUJOURDHUI = "2026-09-12";
 
 function etatVide() {
-  return { points: 0, completedToday: [] };
+  return { points: 0, gestesCochesParDate: {} };
 }
 
 function gesteParId(id) {
@@ -20,12 +21,12 @@ function gesteParId(id) {
   return geste;
 }
 
-// Cocher un geste attribue les points du geste (selon sa difficulté) et l'enregistre comme fait
+// Cocher un geste attribue les points du geste (selon sa difficulté) et l'enregistre à sa date
 {
   const geste = gesteParId("eteindre-lumiere");
-  const etat = cocherGeste(etatVide(), geste);
+  const etat = cocherGeste(etatVide(), geste, AUJOURDHUI);
   assert.equal(etat.points, geste.points);
-  assert.deepEqual(etat.completedToday, [geste.id]);
+  assert.deepEqual(etat.gestesCochesParDate[AUJOURDHUI], [geste.id]);
 }
 
 // Cocher plusieurs gestes différents cumule leurs points respectifs
@@ -33,37 +34,49 @@ function gesteParId(id) {
   const g1 = gesteParId("eteindre-lumiere");
   const g2 = gesteParId("baisser-chauffage");
   let etat = etatVide();
-  etat = cocherGeste(etat, g1);
-  etat = cocherGeste(etat, g2);
+  etat = cocherGeste(etat, g1, AUJOURDHUI);
+  etat = cocherGeste(etat, g2, AUJOURDHUI);
   assert.equal(etat.points, g1.points + g2.points);
-  assert.deepEqual(etat.completedToday, [g1.id, g2.id]);
+  assert.deepEqual(etat.gestesCochesParDate[AUJOURDHUI], [g1.id, g2.id]);
 }
 
 // Cocher deux fois le même geste ne double pas les points
 {
   const geste = gesteParId("eteindre-lumiere");
   let etat = etatVide();
-  etat = cocherGeste(etat, geste);
-  etat = cocherGeste(etat, geste);
+  etat = cocherGeste(etat, geste, AUJOURDHUI);
+  etat = cocherGeste(etat, geste, AUJOURDHUI);
   assert.equal(etat.points, geste.points);
-  assert.equal(etat.completedToday.length, 1);
+  assert.equal(etat.gestesCochesParDate[AUJOURDHUI].length, 1);
 }
 
 // Décocher un geste retire les points attribués
 {
   const geste = gesteParId("eteindre-lumiere");
   let etat = etatVide();
-  etat = cocherGeste(etat, geste);
-  etat = decocherGeste(etat, geste);
+  etat = cocherGeste(etat, geste, AUJOURDHUI);
+  etat = decocherGeste(etat, geste, AUJOURDHUI);
   assert.equal(etat.points, 0);
-  assert.deepEqual(etat.completedToday, []);
+  assert.deepEqual(etat.gestesCochesParDate[AUJOURDHUI], []);
 }
 
 // Décocher un geste non coché ne fait rien (pas de points négatifs)
 {
   const geste = gesteParId("eteindre-lumiere");
-  const etat = decocherGeste(etatVide(), geste);
+  const etat = decocherGeste(etatVide(), geste, AUJOURDHUI);
   assert.equal(etat.points, 0);
+}
+
+// Les gestes cochés à une date différente sont indépendants (pas de fuite entre jours)
+{
+  const geste = gesteParId("eteindre-lumiere");
+  let etat = etatVide();
+  etat = cocherGeste(etat, geste, "2026-09-11");
+  assert.equal(etat.gestesCochesParDate["2026-09-12"], undefined);
+  etat = cocherGeste(etat, geste, "2026-09-12");
+  assert.equal(etat.points, geste.points * 2);
+  assert.deepEqual(etat.gestesCochesParDate["2026-09-11"], [geste.id]);
+  assert.deepEqual(etat.gestesCochesParDate["2026-09-12"], [geste.id]);
 }
 
 // Les points d'un geste suivent le barème lié à sa difficulté (1=10, 2=20, 3=30)
