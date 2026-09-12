@@ -42,4 +42,5 @@ CHANGELOG.md
 ## État actuel
 - Session 1 : repo initialisé, `CLAUDE.md` déposé (fait hors Claude Code).
 - Session 2 : squelette PWA créé — écran d'accueil mobile-first, `manifest.webmanifest`, `sw.js`, `css/app.css`, `js/app.js`, icônes placeholder. Voir `changelog.md`.
+- Session 3 : correction du câblage GitHub Pages — `app.css` et les icônes traînaient à la racine au lieu de `css/` et `icons/`, et `js/app.js`, `manifest.webmanifest`, `sw.js` n'existaient pas encore alors qu'`index.html` les référençait déjà. Fichiers déplacés/créés à leur place, page testée conforme à l'architecture cible. Voir `changelog.md`.
 - À vérifier par Sébastien : activation de GitHub Pages sur `main` (Settings → Pages) si l'URL de test ne répond pas.
