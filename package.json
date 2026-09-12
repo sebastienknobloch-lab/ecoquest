@@ -1,0 +1,6 @@
+{
+  "name": "ecoquest",
+  "private": true,
+  "type": "module",
+  "description": "Zéro build : ce fichier sert uniquement à exécuter les tests avec node."
+}

@@ -1,9 +1,12 @@
-const CACHE_NAME = "ecoquest-shell-v1";
+const CACHE_NAME = "ecoquest-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./css/app.css",
   "./js/app.js",
+  "./js/state.js",
+  "./js/gamification.js",
+  "./data/gestes.json",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
