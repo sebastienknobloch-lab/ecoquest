@@ -1,4 +1,4 @@
-import { STREAK_PAR_DEFAUT, JOKER_PAR_DEFAUT } from "./gamification.js";
+import { STREAK_PAR_DEFAUT, JOKER_PAR_DEFAUT, JOKERS_PAR_SEMAINE } from "./gamification.js";
 
 const STORAGE_KEY = "ecoquest-v1";
 
@@ -51,6 +51,13 @@ export function loadState() {
     // pour rester robuste si un champ imbriqué venait à manquer).
     state.streak = { ...STREAK_PAR_DEFAUT, ...(parsed.streak || {}) };
     state.joker = { ...JOKER_PAR_DEFAUT, ...(parsed.joker || {}) };
+    // Migration douce (badges) : `dejaUtilise` n'existait pas avant cette version.
+    // Si le joker de la semaine en cours est déjà entamé, on peut en déduire
+    // qu'il a servi au moins une fois, pour ne pas priver injustement du badge
+    // "Joker utilisé" un état déjà en cours d'utilisation.
+    if (!state.joker.dejaUtilise && state.joker.disponible < JOKERS_PAR_SEMAINE) {
+      state.joker.dejaUtilise = true;
+    }
 
     return state;
   } catch {
