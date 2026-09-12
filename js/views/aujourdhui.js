@@ -1,4 +1,5 @@
-import { cocherGeste, decocherGeste } from "../gamification.js";
+import { cocherGeste, decocherGeste, selectionDuJour } from "../gamification.js";
+import { dateDuJour } from "../state.js";
 
 const CATEGORIES = [
   { id: "energie", label: "⚡ Énergie" },
@@ -10,6 +11,11 @@ const CATEGORIES = [
 
 export function renderAujourdhui(container, initialState, persist) {
   let state = initialState;
+  let gestes = null;
+  // Id du geste qui vient d'être coché, pour ne jouer la micro-animation
+  // qu'à cet endroit précis lors du prochain rendu.
+  let idAAnimer = null;
+
   container.innerHTML = "";
 
   const section = document.createElement("section");
@@ -20,16 +26,31 @@ export function renderAujourdhui(container, initialState, persist) {
 
   const tagline = document.createElement("p");
   tagline.className = "tagline";
-  tagline.textContent = "Coche les éco-gestes réalisés aujourd'hui.";
+  tagline.textContent = "Tes gestes du jour, sélectionnés pour toi.";
+
+  const duJourTitre = document.createElement("h2");
+  duJourTitre.className = "section-titre";
+  duJourTitre.textContent = "Tes 3 gestes du jour";
+
+  const duJourListe = document.createElement("ul");
+  duJourListe.className = "geste-list geste-list--du-jour";
+
+  const catalogueDetails = document.createElement("details");
+  catalogueDetails.className = "catalogue-complet";
+
+  const catalogueSummary = document.createElement("summary");
+  catalogueSummary.className = "catalogue-complet-titre";
 
   const categoriesEl = document.createElement("div");
   categoriesEl.className = "categories";
+
+  catalogueDetails.append(catalogueSummary, categoriesEl);
 
   const statusEl = document.createElement("p");
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
-  section.append(pointsEl, tagline, categoriesEl, statusEl);
+  section.append(pointsEl, tagline, duJourTitre, duJourListe, catalogueDetails, statusEl);
   container.append(section);
 
   function renderPoints() {
@@ -37,9 +58,24 @@ export function renderAujourdhui(container, initialState, persist) {
   }
   renderPoints();
 
-  function creerLigneGeste(geste) {
+  function estCoche(geste, dateISO) {
+    return (state.gestesCochesParDate[dateISO] || []).includes(geste.id);
+  }
+
+  function basculerGeste(geste, dateISO, coche) {
+    state = coche ? cocherGeste(state, geste, dateISO) : decocherGeste(state, geste, dateISO);
+    persist(state);
+    renderPoints();
+    idAAnimer = coche ? geste.id : null;
+    afficherTout();
+  }
+
+  function creerLigneGeste(geste, dateISO, { microAnimation } = {}) {
     const li = document.createElement("li");
     li.className = "geste";
+    if (microAnimation && geste.id === idAAnimer) {
+      li.classList.add("geste--du-jour", "geste--validee");
+    }
 
     const label = document.createElement("label");
     label.className = "geste-label";
@@ -47,13 +83,9 @@ export function renderAujourdhui(container, initialState, persist) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.className = "geste-checkbox";
-    checkbox.checked = state.completedToday.includes(geste.id);
+    checkbox.checked = estCoche(geste, dateISO);
     checkbox.addEventListener("change", () => {
-      state = checkbox.checked
-        ? cocherGeste(state, geste)
-        : decocherGeste(state, geste);
-      persist(state);
-      renderPoints();
+      basculerGeste(geste, dateISO, checkbox.checked);
     });
 
     const texte = document.createElement("span");
@@ -71,18 +103,17 @@ export function renderAujourdhui(container, initialState, persist) {
     return li;
   }
 
-  function creerSectionCategorie(categorie, gestes, ouverte) {
+  function creerSectionCategorie(categorie, gestesCategorie, dateISO) {
     const details = document.createElement("details");
     details.className = "categorie";
-    details.open = ouverte;
 
     const summary = document.createElement("summary");
     summary.className = "categorie-titre";
-    summary.textContent = `${categorie.label} (${gestes.length})`;
+    summary.textContent = `${categorie.label} (${gestesCategorie.length})`;
 
     const ul = document.createElement("ul");
     ul.className = "geste-list";
-    gestes.forEach((geste) => ul.append(creerLigneGeste(geste)));
+    gestesCategorie.forEach((geste) => ul.append(creerLigneGeste(geste, dateISO)));
 
     details.append(summary, ul);
     return details;
@@ -94,13 +125,33 @@ export function renderAujourdhui(container, initialState, persist) {
     return reponse.json();
   }
 
+  function afficherGestesDuJour(dateISO) {
+    duJourListe.innerHTML = "";
+    selectionDuJour(gestes, dateISO).forEach((geste) => {
+      duJourListe.append(creerLigneGeste(geste, dateISO, { microAnimation: true }));
+    });
+  }
+
+  function afficherCatalogueComplet(dateISO) {
+    categoriesEl.innerHTML = "";
+    catalogueSummary.textContent = `Catalogue complet (${gestes.length} gestes)`;
+    CATEGORIES.forEach((categorie) => {
+      const gestesCategorie = gestes.filter((g) => g.categorie === categorie.id);
+      if (gestesCategorie.length === 0) return;
+      categoriesEl.append(creerSectionCategorie(categorie, gestesCategorie, dateISO));
+    });
+  }
+
+  function afficherTout() {
+    const dateISO = dateDuJour();
+    afficherGestesDuJour(dateISO);
+    afficherCatalogueComplet(dateISO);
+  }
+
   chargerGestes()
-    .then((gestes) => {
-      CATEGORIES.forEach((categorie, index) => {
-        const gestesCategorie = gestes.filter((g) => g.categorie === categorie.id);
-        if (gestesCategorie.length === 0) return;
-        categoriesEl.append(creerSectionCategorie(categorie, gestesCategorie, index === 0));
-      });
+    .then((gestesRecus) => {
+      gestes = gestesRecus;
+      afficherTout();
       statusEl.remove();
     })
     .catch(() => {

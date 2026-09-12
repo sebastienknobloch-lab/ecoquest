@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-12 — Session 6 : 3 gestes du jour (sélection déterministe)
+- **Onglet Aujourd'hui repensé** : au lieu d'afficher les 30 gestes d'un coup, l'écran met en avant « Tes 3 gestes du jour », un geste piochés dans 3 catégories différentes.
+- La sélection est **déterministe par date** (nouvelle fonction `selectionDuJour()` dans `js/gamification.js`, PRNG déterministe seedé par la date AAAA-MM-JJ) : les mêmes 3 gestes s'affichent à chaque rechargement dans la journée, et le tirage change à minuit — jamais de tirage aléatoire à chaque visite.
+- `js/state.js` : la propriété `completedToday` (gestes cochés sans notion de date) est remplacée par `gestesCochesParDate` (objet `{ "AAAA-MM-JJ": [ids...] }`), ajoutée avec une valeur par défaut dans `loadState()`. Migration douce : les gestes déjà cochés avant cette session sont rattachés à la date du jour lors du premier chargement, aucun point déjà gagné n'est perdu.
+- `js/gamification.js` : `cocherGeste()`/`decocherGeste()` prennent désormais la date en plus du geste et lisent/écrivent dans `gestesCochesParDate[date]`, toujours sans double comptage (que le geste soit coché depuis la sélection du jour ou depuis le catalogue complet, qui partagent le même état).
+- Le catalogue complet des 30 gestes reste accessible depuis l'onglet Aujourd'hui, dans une section repliée « Catalogue complet », groupée par catégorie comme avant.
+- Chaque geste du jour se coche en un tap (cible ≥ 44px) avec une micro-animation de validation sobre (léger flash de couleur, 0,5 s), désactivée automatiquement si l'utilisateur a activé « réduire les animations » (`prefers-reduced-motion`).
+- `tests/points.test.js` : mis à jour pour la nouvelle signature `cocherGeste(état, geste, date)`/`decocherGeste(...)` et le nouveau stockage par date, avec un test vérifiant l'indépendance des gestes cochés entre deux dates différentes.
+- Ajout de `tests/selection.test.js` : vérifie que `selectionDuJour()` renvoie toujours 3 gestes, de 3 catégories différentes, de façon déterministe pour une date donnée (même date → même sélection) et change avec la date.
+- `sw.js` : cache renommé `ecoquest-shell-v4` pour forcer la mise à jour sur les téléphones déjà installés.
+
 ## 2026-09-12 — Session 5 : Navigation à 4 onglets + catalogue de 30 gestes
 - **Navigation** : ajout d'une barre basse fixe à 4 onglets (Aujourd'hui, Défis, Foyer, Profil), cibles tactiles ≥ 44px, `padding-bottom: env(safe-area-inset-bottom)` pour l'encoche iOS, onglet actif distingué par couleur ET fond (pas seulement la couleur, pour l'accessibilité).
 - Ajout d'un routeur minimal dans `js/app.js` (aucun framework) et de 4 modules de vue : `js/views/aujourdhui.js`, `js/views/defis.js`, `js/views/foyer.js`, `js/views/profil.js`. Défis/Foyer/Profil affichent un titre et « Bientôt » en attendant leur contenu.
