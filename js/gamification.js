@@ -42,8 +42,18 @@ export function calculerNiveau(points) {
 
 export const JOKERS_PAR_SEMAINE = 1;
 
-export const STREAK_PAR_DEFAUT = { actuel: 0, dernierJourValide: null, dernierJourViaJoker: false };
-export const JOKER_PAR_DEFAUT = { disponible: JOKERS_PAR_SEMAINE, semaine: null };
+// jokerUtiliseDansStreak : vrai si le joker a servi à combler un jour manqué au
+// moins une fois pendant la série en cours (remis à false quand une nouvelle
+// série démarre), utilisé pour le badge "Semaine sans faute".
+export const STREAK_PAR_DEFAUT = {
+  actuel: 0,
+  dernierJourValide: null,
+  dernierJourViaJoker: false,
+  jokerUtiliseDansStreak: false,
+};
+// dejaUtilise : vrai dès que le joker a servi une fois, ne se réinitialise
+// jamais (contrairement à `disponible`), utilisé pour le badge "Joker utilisé".
+export const JOKER_PAR_DEFAUT = { disponible: JOKERS_PAR_SEMAINE, semaine: null, dejaUtilise: false };
 
 export function jourPrecedent(dateISO) {
   const d = new Date(`${dateISO}T00:00:00`);
@@ -67,7 +77,7 @@ export function semaineISO(dateISO) {
 function rechargerJokerSiNouvelleSemaine(joker, dateISO) {
   const semaineActuelle = semaineISO(dateISO);
   if (joker.semaine === semaineActuelle) return joker;
-  return { disponible: JOKERS_PAR_SEMAINE, semaine: semaineActuelle };
+  return { disponible: JOKERS_PAR_SEMAINE, semaine: semaineActuelle, dejaUtilise: joker.dejaUtilise };
 }
 
 // Appelée quand le premier geste d'un jour donné vient d'être validé.
@@ -78,20 +88,30 @@ function validerJourPourStreak(streak, joker, dateISO) {
 
   if (streak.dernierJourValide === veille) {
     return {
-      streak: { actuel: streak.actuel + 1, dernierJourValide: dateISO, dernierJourViaJoker: false },
+      streak: {
+        actuel: streak.actuel + 1,
+        dernierJourValide: dateISO,
+        dernierJourViaJoker: false,
+        jokerUtiliseDansStreak: streak.jokerUtiliseDansStreak,
+      },
       joker: jokerRecharge,
     };
   }
 
   if (streak.dernierJourValide === avantVeille && jokerRecharge.disponible > 0) {
     return {
-      streak: { actuel: streak.actuel + 1, dernierJourValide: dateISO, dernierJourViaJoker: true },
-      joker: { ...jokerRecharge, disponible: jokerRecharge.disponible - 1 },
+      streak: {
+        actuel: streak.actuel + 1,
+        dernierJourValide: dateISO,
+        dernierJourViaJoker: true,
+        jokerUtiliseDansStreak: true,
+      },
+      joker: { ...jokerRecharge, disponible: jokerRecharge.disponible - 1, dejaUtilise: true },
     };
   }
 
   return {
-    streak: { actuel: 1, dernierJourValide: dateISO, dernierJourViaJoker: false },
+    streak: { actuel: 1, dernierJourValide: dateISO, dernierJourViaJoker: false, jokerUtiliseDansStreak: false },
     joker: jokerRecharge,
   };
 }
@@ -118,6 +138,10 @@ function annulerJourPourStreak(streak, joker, dateISO) {
       actuel: streak.actuel - 1,
       dernierJourValide: streak.actuel > 1 ? jourPrecedentDuStreak : null,
       dernierJourViaJoker: false,
+      // Approximation : on ne garde pas l'historique complet de la série annulée.
+      // Si le jour annulé avait utilisé le joker, on suppose qu'aucun autre jour
+      // de la série restante n'en a utilisé (cas courant : un seul joker par semaine).
+      jokerUtiliseDansStreak: streak.dernierJourViaJoker ? false : streak.jokerUtiliseDansStreak,
     },
     joker: jokerRestitue,
   };
@@ -220,4 +244,76 @@ export function selectionDuJour(gestes, dateISO) {
     const index = Math.floor(rand() * gestesCategorie.length);
     return gestesCategorie[index];
   });
+}
+
+// --- Badges ---
+//
+// Les 8 badges sont toujours recalculés à la volée à partir de l'état existant
+// (points, streak, joker, historique gestesCochesParDate) : ils ne sont jamais
+// stockés séparément, pour éviter tout double comptage et toute désynchronisation
+// avec l'état réel. Un état ancien (streak/joker absents) reste géré grâce aux
+// valeurs par défaut ci-dessus.
+
+export const BADGES = [
+  { id: "premier-pas", libelle: "Premier pas", description: "Valider au moins 1 geste", icone: "🌱" },
+  { id: "une-semaine", libelle: "Une semaine", description: "Atteindre une série de 7 jours", icone: "🔥" },
+  {
+    id: "toutes-les-couleurs",
+    libelle: "Toutes les couleurs",
+    description: "Un geste validé dans chacune des 5 catégories",
+    icone: "🌈",
+  },
+  { id: "niveau-3", libelle: "Niveau 3", description: "Atteindre le niveau 3", icone: "⭐" },
+  { id: "niveau-5", libelle: "Niveau max", description: "Atteindre le niveau 5", icone: "🏆" },
+  { id: "cinquante-gestes", libelle: "50 gestes", description: "Valider 50 gestes au total", icone: "♻️" },
+  { id: "joker-utilise", libelle: "Joker utilisé", description: "Utiliser le joker hebdomadaire", icone: "🃏" },
+  {
+    id: "semaine-sans-faute",
+    libelle: "Semaine sans faute",
+    description: "Série de 7 jours sans utiliser le joker",
+    icone: "✨",
+  },
+];
+
+// Nombre total de gestes validés, toutes dates confondues (un même geste
+// coché à des dates différentes compte à chaque fois).
+function totalGestesValides(state) {
+  return Object.values(state.gestesCochesParDate || {}).reduce((total, ids) => total + ids.length, 0);
+}
+
+// Ensemble des catégories ayant au moins un geste validé, toutes dates confondues.
+function categoriesTouchees(state, gestes) {
+  const gestesParId = new Map(gestes.map((g) => [g.id, g]));
+  const categories = new Set();
+  Object.values(state.gestesCochesParDate || {}).forEach((ids) => {
+    ids.forEach((id) => {
+      const geste = gestesParId.get(id);
+      if (geste) categories.add(geste.categorie);
+    });
+  });
+  return categories;
+}
+
+// Calcule les 8 badges (obtenu ou non) à partir de l'état courant.
+// `gestes` (le catalogue complet) est nécessaire pour "Toutes les couleurs" ;
+// omis ou vide, ce seul badge reste simplement verrouillé.
+export function calculerBadges(state, gestes) {
+  const streak = state.streak ?? STREAK_PAR_DEFAUT;
+  const joker = state.joker ?? JOKER_PAR_DEFAUT;
+  const niveau = calculerNiveau(state.points ?? 0).niveau;
+  const totalGestes = totalGestesValides(state);
+  const nbCategories = categoriesTouchees(state, gestes ?? []).size;
+
+  const obtenus = {
+    "premier-pas": totalGestes >= 1,
+    "une-semaine": streak.actuel >= 7,
+    "toutes-les-couleurs": nbCategories >= 5,
+    "niveau-3": niveau >= 3,
+    "niveau-5": niveau >= 5,
+    "cinquante-gestes": totalGestes >= 50,
+    "joker-utilise": joker.dejaUtilise === true,
+    "semaine-sans-faute": streak.actuel >= 7 && !streak.jokerUtiliseDansStreak,
+  };
+
+  return BADGES.map((badge) => ({ ...badge, obtenu: obtenus[badge.id] }));
 }
