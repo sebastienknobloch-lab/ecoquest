@@ -40,4 +40,6 @@ CHANGELOG.md
 5. Mettre à jour la section "État actuel" ci-dessous.
 
 ## État actuel
-- Session 0 : repo initialisé, rien de codé.
+- Session 1 : repo initialisé, `CLAUDE.md` déposé (fait hors Claude Code).
+- Session 2 : squelette PWA créé — écran d'accueil mobile-first, `manifest.webmanifest`, `sw.js`, `css/app.css`, `js/app.js`, icônes placeholder. Voir `changelog.md`.
+- À vérifier par Sébastien : activation de GitHub Pages sur `main` (Settings → Pages) si l'URL de test ne répond pas.
