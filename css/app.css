@@ -94,6 +94,12 @@ html, body {
   transition: width 0.3s ease;
 }
 
+.streak-bloc {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--eco-green-dark);
+}
+
 .points-total {
   display: inline-block;
   margin: 0 0 12px;

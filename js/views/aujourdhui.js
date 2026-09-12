@@ -50,6 +50,9 @@ export function renderAujourdhui(container, initialState, persist) {
   const pointsEl = document.createElement("p");
   pointsEl.className = "points-total";
 
+  const streakEl = document.createElement("p");
+  streakEl.className = "streak-bloc";
+
   const tagline = document.createElement("p");
   tagline.className = "tagline";
   tagline.textContent = "Tes gestes du jour, sélectionnés pour toi.";
@@ -76,11 +79,23 @@ export function renderAujourdhui(container, initialState, persist) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
-  section.append(niveauBloc, pointsEl, tagline, duJourTitre, duJourListe, catalogueDetails, statusEl);
+  section.append(niveauBloc, pointsEl, streakEl, tagline, duJourTitre, duJourListe, catalogueDetails, statusEl);
   container.append(section);
 
   function renderPoints() {
     pointsEl.textContent = `${state.points} point${state.points > 1 ? "s" : ""}`;
+  }
+
+  function renderStreak() {
+    const jours = state.streak.actuel;
+    const texteJoker =
+      state.joker.disponible > 0
+        ? "joker dispo cette semaine"
+        : "joker déjà utilisé cette semaine";
+    streakEl.textContent =
+      jours > 0
+        ? `🔥 ${jours} jour${jours > 1 ? "s" : ""} de suite — ${texteJoker}`
+        : `Valide un geste aujourd'hui pour démarrer ta série — ${texteJoker}`;
   }
 
   function renderNiveau() {
@@ -96,6 +111,7 @@ export function renderAujourdhui(container, initialState, persist) {
 
   renderPoints();
   renderNiveau();
+  renderStreak();
 
   function estCoche(geste, dateISO) {
     return (state.gestesCochesParDate[dateISO] || []).includes(geste.id);
@@ -106,6 +122,7 @@ export function renderAujourdhui(container, initialState, persist) {
     persist(state);
     renderPoints();
     renderNiveau();
+    renderStreak();
     idAAnimer = coche ? geste.id : null;
     afficherTout();
   }
