@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-12 — Session 8 : Streak (jours consécutifs) + joker hebdomadaire
+- `js/gamification.js` : ajout du streak de jours consécutifs. Le streak avance dès que le premier geste d'un jour est validé et que la veille avait aussi été validée ; sinon il repart de 1. Ajout d'un joker hebdomadaire (`JOKERS_PAR_SEMAINE = 1`) qui permet de sauter un unique jour manqué sans casser le streak ; il se recharge automatiquement à chaque nouvelle semaine ISO (`semaineISO()`). `cocherGeste()`/`decocherGeste()` mettent à jour `state.streak` et `state.joker` uniquement quand le nombre de gestes validés du jour passe de 0 à 1 (ou inversement), pour ne jamais double-compter : décocher le dernier geste d'un jour annule proprement l'incrément du streak (et restitue le joker s'il avait été utilisé pour ce jour-là).
+- `js/state.js` : migration douce dans `loadState()` — si `streak`/`joker` sont absents (ou incomplets) dans l'état existant, ils sont initialisés à leurs valeurs par défaut sans toucher aux points ni aux gestes déjà enregistrés.
+- Onglet Aujourd'hui (`js/views/aujourdhui.js`) : ajout d'un bloc affichant le streak actuel (« 🔥 X jours de suite ») et la disponibilité du joker de la semaine, mis à jour à chaque geste coché/décoché.
+- `css/app.css` : style `.streak-bloc`.
+- Ajout de `tests/streak.test.js` : incrément/reset du streak, calcul de la semaine ISO, consommation et recharge hebdomadaire du joker, et annulation correcte au décochage (y compris restitution du joker).
+- `sw.js` : cache renommé `ecoquest-shell-v6` pour forcer la mise à jour sur les téléphones déjà installés.
+
 ## 2026-09-12 — Session 7 : Niveaux de progression
 - `js/gamification.js` : ajout de `SEUILS_NIVEAUX` (0/50/150/300/500, 5 niveaux) et de `calculerNiveau(points)`, qui renvoie le niveau actuel (1 à 5), les points restants avant le niveau suivant et le pourcentage de progression dans le niveau courant. Le niveau **n'est jamais stocké dans l'état** : toujours recalculé à la volée à partir de `state.points`, pour éviter tout double comptage avec les points.
 - Onglet Aujourd'hui (`js/views/aujourdhui.js`) : ajout en haut de l'écran d'un bloc « Niveau X » avec une barre de progression visuelle vers le niveau suivant (ou « Niveau maximum atteint ! » au niveau 5), mise à jour à chaque geste coché/décoché en même temps que le total de points.

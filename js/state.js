@@ -1,3 +1,5 @@
+import { STREAK_PAR_DEFAUT, JOKER_PAR_DEFAUT } from "./gamification.js";
+
 const STORAGE_KEY = "ecoquest-v1";
 
 // Toute nouvelle propriété doit avoir une valeur par défaut ici
@@ -6,6 +8,8 @@ const DEFAULT_STATE = {
   points: 0,
   gestesCochesParDate: {},
   activeTab: "aujourdhui",
+  streak: STREAK_PAR_DEFAUT,
+  joker: JOKER_PAR_DEFAUT,
 };
 
 // Format AAAA-MM-JJ en heure locale (pas d'UTC, pour que "minuit" corresponde
@@ -41,6 +45,13 @@ export function loadState() {
       state.gestesCochesParDate[dateDuJour()] = parsed.completedToday;
     }
     delete state.completedToday;
+
+    // Migration douce : streak/joker n'existaient pas avant cette version.
+    // On les initialise sans écraser une valeur déjà présente (fusion superficielle
+    // pour rester robuste si un champ imbriqué venait à manquer).
+    state.streak = { ...STREAK_PAR_DEFAUT, ...(parsed.streak || {}) };
+    state.joker = { ...JOKER_PAR_DEFAUT, ...(parsed.joker || {}) };
+
     return state;
   } catch {
     return { ...DEFAULT_STATE, gestesCochesParDate: {} };
