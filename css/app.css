@@ -56,6 +56,44 @@ html, body {
   padding: 16px 16px 32px;
 }
 
+.niveau-bloc {
+  margin: 0 0 12px;
+}
+
+.niveau-entete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.niveau-badge {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--eco-green-dark);
+}
+
+.niveau-detail {
+  font-size: 0.8rem;
+  color: #3a3a3a;
+  text-align: right;
+}
+
+.niveau-barre {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(46, 125, 50, 0.15);
+  overflow: hidden;
+}
+
+.niveau-barre-remplissage {
+  height: 100%;
+  background: var(--eco-green);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
 .points-total {
   display: inline-block;
   margin: 0 0 12px;
