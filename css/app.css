@@ -26,11 +26,12 @@ html, body {
   position: sticky;
   top: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 2px;
   padding: 16px 20px;
   background: var(--eco-green-dark);
   color: #ffffff;
+  z-index: 5;
 }
 
 .app-header h1 {
@@ -38,13 +39,15 @@ html, body {
   margin: 0;
 }
 
-.app-header .points {
+.app-status {
   margin: 0;
-  font-weight: bold;
-  font-size: 1.1rem;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 6px 12px;
-  border-radius: 999px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* La navigation basse fixe (tab-bar) masque le bas de l'écran : on réserve la place. */
+.view-root {
+  padding-bottom: 96px;
 }
 
 .gestes {
@@ -53,9 +56,64 @@ html, body {
   padding: 16px 16px 32px;
 }
 
+.points-total {
+  display: inline-block;
+  margin: 0 0 12px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  background: rgba(46, 125, 50, 0.12);
+  color: var(--eco-green-dark);
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
 .gestes .tagline {
   margin: 0 0 16px;
   color: #3a3a3a;
+}
+
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.categorie {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.categorie-titre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--eco-green-dark);
+  list-style: none;
+}
+
+.categorie-titre::-webkit-details-marker {
+  display: none;
+}
+
+.categorie-titre::after {
+  content: "▸";
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.categorie[open] .categorie-titre::after {
+  transform: rotate(90deg);
+}
+
+.categorie .geste-list {
+  padding: 0 12px 12px;
 }
 
 .geste-list {
@@ -70,7 +128,10 @@ html, body {
 .geste {
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.categorie .geste {
+  background: var(--eco-bg);
 }
 
 .geste-label {
@@ -111,6 +172,67 @@ html, body {
   font-size: 0.85rem;
   color: #6a6a6a;
   text-align: center;
+}
+
+.view-placeholder {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  text-align: center;
+  color: #3a3a3a;
+}
+
+.view-placeholder h2 {
+  color: var(--eco-green-dark);
+  margin: 0 0 8px;
+}
+
+/* Navigation basse à 4 onglets : fixe, pouce-friendly, encoche iOS */
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  min-width: 44px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: #5a5a5a;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.tab-btn .tab-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 2px 12px;
+  border-radius: 999px;
+}
+
+/* L'onglet actif se distingue par la couleur ET un fond (pas seulement la couleur) */
+.tab-btn.active {
+  color: var(--eco-green-dark);
+  font-weight: bold;
+}
+
+.tab-btn.active .tab-icon {
+  background: rgba(46, 125, 50, 0.15);
 }
 
 /* Cibles tactiles >= 44px partout où des boutons apparaissent */

@@ -1,9 +1,20 @@
 import { loadState, saveState } from "./state.js";
-import { cocherGeste, decocherGeste } from "./gamification.js";
+import { renderAujourdhui } from "./views/aujourdhui.js";
+import { renderDefis } from "./views/defis.js";
+import { renderFoyer } from "./views/foyer.js";
+import { renderProfil } from "./views/profil.js";
 
-const statusEl = document.querySelector("[data-status]");
-const pointsEl = document.querySelector("[data-points]");
-const listEl = document.querySelector("[data-geste-list]");
+const VUES = {
+  aujourdhui: renderAujourdhui,
+  defis: renderDefis,
+  foyer: renderFoyer,
+  profil: renderProfil,
+};
+
+const viewRoot = document.querySelector("[data-view-root]");
+const tabBar = document.querySelector("[data-tab-bar]");
+const tabButtons = tabBar ? Array.from(tabBar.querySelectorAll("[data-tab]")) : [];
+const statusEl = document.querySelector("[data-app-status]");
 
 let state = loadState();
 
@@ -18,60 +29,33 @@ function isInstalled() {
   );
 }
 
-function renderPoints() {
-  if (!pointsEl) return;
-  pointsEl.textContent = `${state.points} point${state.points > 1 ? "s" : ""}`;
+function persist(nextState) {
+  state = nextState;
+  saveState(state);
 }
 
-function creerLigneGeste(geste) {
-  const li = document.createElement("li");
-  li.className = "geste";
-
-  const label = document.createElement("label");
-  label.className = "geste-label";
-
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.className = "geste-checkbox";
-  checkbox.checked = state.completedToday.includes(geste.id);
-  checkbox.addEventListener("change", () => {
-    state = checkbox.checked
-      ? cocherGeste(state, geste.id)
-      : decocherGeste(state, geste.id);
-    saveState(state);
-    renderPoints();
+function mettreAJourOngletActif() {
+  tabButtons.forEach((btn) => {
+    const actif = btn.dataset.tab === state.activeTab;
+    btn.classList.toggle("active", actif);
+    btn.setAttribute("aria-current", actif ? "page" : "false");
   });
-
-  const texte = document.createElement("span");
-  texte.className = "geste-texte";
-
-  const titre = document.createElement("strong");
-  titre.textContent = geste.label;
-
-  const detail = document.createElement("small");
-  detail.textContent = `≈ ${geste.co2_evite_g} g CO2 évités (estimation) — ${geste.source}`;
-
-  texte.append(titre, detail);
-  label.append(checkbox, texte);
-  li.append(label);
-  return li;
 }
 
-async function chargerGestes() {
-  const reponse = await fetch("data/gestes.json");
-  if (!reponse.ok) throw new Error("gestes.json indisponible");
-  return reponse.json();
+function afficherVueActive() {
+  if (!viewRoot) return;
+  const vue = VUES[state.activeTab] || VUES.aujourdhui;
+  vue(viewRoot, state, persist);
+  mettreAJourOngletActif();
 }
 
-async function afficherGestesDuJour() {
-  if (!listEl) return;
-  try {
-    const gestes = await chargerGestes();
-    gestes.forEach((geste) => listEl.append(creerLigneGeste(geste)));
-  } catch {
-    setStatus("Impossible de charger les gestes du jour.");
-  }
-}
+tabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.tab === state.activeTab) return;
+    persist({ ...state, activeTab: btn.dataset.tab });
+    afficherVueActive();
+  });
+});
 
 function initServiceWorker() {
   if (!("serviceWorker" in navigator)) {
@@ -92,6 +76,5 @@ function initServiceWorker() {
   });
 }
 
-renderPoints();
-afficherGestesDuJour();
+afficherVueActive();
 initServiceWorker();
