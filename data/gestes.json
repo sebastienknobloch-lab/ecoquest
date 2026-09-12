@@ -1,0 +1,42 @@
+[
+  {
+    "id": "eteindre-lumiere",
+    "label": "Éteindre la lumière en sortant d'une pièce",
+    "categorie": "energie",
+    "points": 10,
+    "co2_evite_g": 10,
+    "source": "ADEME, \"Les gestes simples pour économiser l'énergie\" (estimation)"
+  },
+  {
+    "id": "douche-courte",
+    "label": "Prendre une douche courte plutôt qu'un bain",
+    "categorie": "energie",
+    "points": 10,
+    "co2_evite_g": 300,
+    "source": "ADEME, \"Réduire sa consommation d'eau chaude sanitaire\" (estimation)"
+  },
+  {
+    "id": "velo-marche",
+    "label": "Se déplacer à vélo ou à pied pour un petit trajet",
+    "categorie": "deplacements",
+    "points": 10,
+    "co2_evite_g": 580,
+    "source": "Impact CO2 (ADEME), comparateur des moyens de transport (estimation pour ~3 km)"
+  },
+  {
+    "id": "gourde-reutilisable",
+    "label": "Utiliser une gourde réutilisable plutôt qu'une bouteille en plastique",
+    "categorie": "dechets",
+    "points": 10,
+    "co2_evite_g": 80,
+    "source": "Impact CO2 (ADEME), \"Bouteille plastique vs gourde\" (estimation)"
+  },
+  {
+    "id": "trier-dechets",
+    "label": "Trier ses déchets recyclables",
+    "categorie": "dechets",
+    "points": 10,
+    "co2_evite_g": 50,
+    "source": "ADEME, \"Le tri et le recyclage\" (estimation)"
+  }
+]
