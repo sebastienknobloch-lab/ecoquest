@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 — Correction : cache du service worker non renouvelé (à nouveau)
+- Le correctif précédent (« les catégories du catalogue se refermaient à chaque geste coché ») modifiait `js/views/aujourdhui.js` sans renommer le cache dans `sw.js` (resté à `ecoquest-shell-v9`) — même oubli déjà survenu et corrigé une fois dans ce projet (voir l'entrée « cache du service worker non renouvelé » plus bas), qui aurait dû être vérifié systématiquement à chaque édition de fichier JS. Conséquence : la correction était bien fusionnée sur `main`, mais toute PWA déjà installée continuait de servir l'ancien `aujourdhui.js` en cache, donc les catégories continuaient à se refermer.
+- `sw.js` : cache renommé `ecoquest-shell-v10` pour forcer la mise à jour sur les téléphones déjà installés.
+
 ## 2026-09-13 — Correction : les catégories du catalogue se refermaient à chaque geste coché
 - Dans l'onglet Aujourd'hui, cocher un geste depuis le catalogue complet (`js/views/aujourdhui.js`) appelait `basculerGeste()` puis `afficherTout()`, qui vidait `categoriesEl` et recréait tous les `<details>` de catégorie — perdant leur attribut `open` à chaque fois. Résultat : toute catégorie dépliée se refermait dès qu'on cochait un geste à l'intérieur.
 - `afficherCatalogueComplet()` relève désormais, avant de vider `categoriesEl`, les ids des catégories actuellement ouvertes (`dataset.categorieId`, ajouté sur chaque `<details class="categorie">`), et repose `open` sur les mêmes après reconstruction.
