@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 — Correction : contraste insuffisant sur les badges verrouillés
+- L'écran Profil (session 9) affichait le texte des badges verrouillés en `#8a8a8a` sur fond `#eceae4`, soit 2,87:1, déjà sous le minimum AA de 4,5:1 — et la règle `opacity: 0.75` posée sur `.badge-carte--verrouille` faisait tomber le rendu réel à 2,10:1. L'entrée de changelog de la session 9 affirmait à tort un « contraste AA » respecté ; corrigée ci-dessous dans son entrée d'origine.
+- `css/app.css` : suppression de `opacity: 0.75` sur `.badge-carte--verrouille`, et texte de `.badge-carte--verrouille .badge-libelle`/`.badge-description` assombri de `#8a8a8a` à `#5a5a5a` (5,74:1 sur `#eceae4`, au-dessus du minimum AA). La distinction visuelle obtenu/verrouillé (fond grisé + cadenas) est inchangée.
+
 ## 2026-09-13 — Session 11 : CI des tests (`.github/workflows/tests.yml`)
 - Les 7 fichiers de `tests/` existaient mais rien ne les exécutait automatiquement (dette connue listée dans `CLAUDE.md`) : un test cassé pouvait être fusionné sur `main` sans que personne ne le remarque.
 - Ajout de `.github/workflows/tests.yml` : à chaque push sur `main` et sur chaque pull request, un job GitHub Actions installe Node 22 puis exécute `node --test tests/*.test.js` (pas de `npm install` ni `npm ci` : le projet n'a aucune dépendance). Le job échoue visiblement si un test échoue, puisque `node --test` retourne un code de sortie non nul dans ce cas.
@@ -45,7 +49,7 @@
 - Deux des huit badges ("Joker utilisé", "Semaine sans faute") ont besoin d'un signal que le streak/joker existants ne portaient pas : ajout de `joker.dejaUtilise` (jamais réinitialisé, contrairement à `disponible`) et `streak.jokerUtiliseDansStreak` (vrai si le joker a comblé un jour de la série en cours, remis à false au démarrage d'une nouvelle série). Mis à jour dans `cocherGeste()`/`decocherGeste()` aux mêmes endroits que le reste du streak, sans nouvelle logique parallèle.
 - `js/state.js` : migration douce pour `joker.dejaUtilise` — un état déjà en cours d'utilisation du joker (disponible < 1 avant cette version) se voit attribuer `dejaUtilise: true` pour ne pas priver injustement du badge correspondant. Un état ancien sans `streak`/`joker` du tout reste géré sans planter (valeurs par défaut).
 - Ajout de `js/views/profil.js` : grille de 8 cartes de badges, badges obtenus visuellement distincts (icône couleur + bordure verte) des badges à débloquer (fond grisé + cadenas 🔒), recalculés à chaque affichage de l'onglet. Le catalogue (`data/gestes.json`) est chargé pour le seul badge "Toutes les couleurs" ; s'il est indisponible, les 7 autres badges restent corrects.
-- `css/app.css` : styles de la grille de badges (2 colonnes, cibles ≥ 44px, contraste AA sur les badges verrouillés).
+- `css/app.css` : styles de la grille de badges (2 colonnes, cibles ≥ 44px). Le contraste des badges verrouillés était en réalité insuffisant (corrigé le 13/09/2026, voir plus haut dans ce journal).
 - Ajout de `tests/badges.test.js` : vérifie chacune des 8 conditions de déblocage indépendamment, ainsi que la robustesse sur un état ancien sans historique complet.
 - `sw.js` : cache renommé `ecoquest-shell-v7` pour forcer la mise à jour sur les téléphones déjà installés.
 
