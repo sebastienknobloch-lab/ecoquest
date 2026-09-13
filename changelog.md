@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-13 — Session 10 : Compteur d'impact cumulé sur le Profil
+- Ajout dans `js/gamification.js` de `impactCumuleGrammes(état, gestes)`, qui somme les `co2_evite_g` de tous les gestes réellement validés dans `gestesCochesParDate`, toutes dates confondues — **recalculé à la volée à chaque affichage, jamais stocké dans l'état**, pour éviter tout double comptage (comme le niveau et les badges).
+- Ajout de `EQUIVALENCES_IMPACT` (3 équivalents : km en voiture évités, charges de smartphone évitées, douches courtes évitées, avec leur facteur de conversion ADEME / Impact CO2 sourcé) et de `calculerEquivalences(état, gestes)`, qui convertit le total cumulé en ces équivalents parlants.
+- Écran Profil (`js/views/profil.js`) : nouveau bloc « 🌍 Ton impact cumulé » en haut de l'écran, affichant le total en kg de CO2 « estimation », puis les 3 équivalents avec leur source citée à côté de chacun. Sans catalogue disponible, le bloc l'indique clairement plutôt que d'afficher un chiffre faux.
+- Aucun nouveau champ d'état : le calcul repose uniquement sur `gestesCochesParDate` (déjà existant) et le catalogue `data/gestes.json` — pas de migration nécessaire dans `js/state.js`.
+- `css/app.css` : styles du bloc d'impact et de sa liste d'équivalents.
+- Ajout de `tests/impact.test.js` : somme sur plusieurs dates, absence de déduplication, robustesse si un id coché est absent du catalogue, cohérence de chaque équivalent avec son facteur de conversion, et vérification qu'aucune propriété n'est ajoutée à l'état.
+- `sw.js` : cache renommé `ecoquest-shell-v8` pour forcer la mise à jour sur les téléphones déjà installés.
+
 ## 2026-09-12 — Session 9 : 8 badges + écran Profil
 - Ajout de 8 badges dans `js/gamification.js` (`BADGES` + `calculerBadges(état, gestes)`), tous **recalculés à la volée** à partir de l'état existant (points, streak, joker, historique `gestesCochesParDate`) : jamais stockés séparément, pour éviter tout double comptage. Badges : Premier pas (1 geste validé), Une semaine (streak ≥ 7), Toutes les couleurs (5 catégories touchées), Niveau 3, Niveau 5 (max), 50 gestes (total toutes dates confondues), Joker utilisé, Semaine sans faute (streak ≥ 7 sans joker).
 - Deux des huit badges ("Joker utilisé", "Semaine sans faute") ont besoin d'un signal que le streak/joker existants ne portaient pas : ajout de `joker.dejaUtilise` (jamais réinitialisé, contrairement à `disponible`) et `streak.jokerUtiliseDansStreak` (vrai si le joker a comblé un jour de la série en cours, remis à false au démarrage d'une nouvelle série). Mis à jour dans `cocherGeste()`/`decocherGeste()` aux mêmes endroits que le reste du streak, sans nouvelle logique parallèle.
