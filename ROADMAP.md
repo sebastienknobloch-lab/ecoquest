@@ -1,76 +1,192 @@
-# EcoQuest — Roadmap en sessions de 15 minutes
+# EcoQuest — Roadmap
 
-## Protocole d'une session (15 min, depuis le téléphone)
+Mise à jour du 13/09/2026. Changements par rapport à la version précédente : rythme 1h/jour au lieu de 15 min, items hors code remontés en tête de file, Piste B réduite aux jalons réels, ajout des outils de diagnostic (console embarquée, journalisation d'erreurs) devenus nécessaires faute de Mac.
+
+## Rythme et protocole
+
+**1 heure de code par jour, du lundi au jeudi. Le vendredi, pas de code.**
+
+Une heure = **3 items terminés**, pas 4. Le quatrième créneau part en corrections, et c'est normal : le code assisté produit vite, il ne produit pas juste.
+
 | Temps | Action |
-|---|---|
-| 0–2 min | Ouvrir Claude → Code → repo `ecoquest`. Coller le prompt du jour. |
-| 2–10 min | Claude Code travaille. Tu ne touches à rien. |
-| 10–13 min | Tester l'appli sur ton téléphone (les 3 étapes données par Claude). |
-| 13–15 min | Valider/merger. Cocher la session ci-dessous. |
+| --- | --- |
+| 0–2 min | Claude → Code → repo `ecoquest`. Coller les prompts du jour. |
+| 2–45 min | Claude Code travaille, item par item. |
+| 45–55 min | Tester sur téléphone après chaque item. |
+| 55–60 min | Merger. Claude Code coche les cases et met à jour `changelog.md`. |
 
 Règles :
-- **Session ratée = session suivante, pas de rattrapage.** On ne double jamais.
-- Si ça bugue : le prompt du lendemain est simplement *"Corrige : [ce que tu as vu]"*.
-- **Le vendredi, pas de code** : la session sert au rayonnement (voir Piste B).
+
+- **La session du jour part de la première case non cochée, dans l'ordre.** Une session sautée n'est pas perdue : la file n'avance que quand un item est terminé.
+- Si ça bugue, le prompt suivant est *« Corrige : [ce que tu as vu] »*, et la case reste ouverte.
+- 🖥️ = **hors session** : exige une machine, un navigateur ou une action manuelle. Rare, signalé.
+- ✅ = **jalon** : rien à coder, quelque chose à observer ou à obtenir.
+
+---
+
+## Le chemin critique n'est pas le code
+
+À 12 items par semaine, le code sera fini avant les autorisations. Ce qui commande le calendrier :
+
+| Contrainte | Durée plancher | À lancer |
+| --- | --- | --- |
+| Compte Play Console + vérification d'identité | 2 à 5 jours | **cette semaine** |
+| Keystore de signature 🖥️ | 30 min sur un ordinateur | **ce week-end** |
+| 12 testeurs actifs en test fermé | **14 jours consécutifs** | dès que l'AAB existe |
+| Ton usage réel avec notifications | 14 jours | phase 3 |
+| Revue Play Store | quelques jours | mi-octobre |
+| 5 foyers à J30 | 30 jours | après publication |
+
+**Conséquence : à partir de la semaine 3, tu auras des heures libres pendant que le compteur des 14 jours tourne.** Utilise-les pour le backlog d'audit et le recrutement de foyers, pas pour empiler des fonctionnalités.
+
+| Jalon | Horizon |
+| --- | --- |
+| Socle consolidé | 17 septembre |
+| APK installable sur ton téléphone | 22 septembre |
+| Test fermé ouvert, 12 testeurs recrutés | 24 septembre |
+| Notifications en production | fin septembre |
+| Fin de la fenêtre 12 testeurs × 14 j | ~8 octobre |
+| **Publication publique Play Store** | **mi-octobre** |
+| Foyer multi-appareils | fin octobre |
+| Rétention J30 mesurée — ta preuve d'impact | mi-novembre |
+
+---
+
+## À faire cette semaine, hors code
+
+- [ ] **H1** — Créer le compte Google Play Console (25 $, vérification d'identité). **Ce soir.** C'est 2 à 5 jours d'attente que tu ne veux pas découvrir en S25.
+- [ ] **H2** — Générer le keystore de signature (`keytool`) et le déposer en secret GitHub en base64. Une demi-heure sur un ordinateur, la seule de tout le projet.
+- [ ] **H3** — Lister 15 personnes à solliciter comme testeurs (il en faut 12 actifs, prévois la marge). Famille, amis, collègues, parents d'élèves.
+- [ ] **H4** — Sécuriser l'accès à un iPhone, même emprunté, pour le jour où tu attaqueras iOS.
 
 ---
 
 ## PISTE A — Construire l'appli
 
-### Phase 0 — Fondations (S1–S3)
-- [ ] **S1** — Hors Claude Code : créer le repo GitHub `ecoquest` (public), y déposer `CLAUDE.md`, activer GitHub Pages sur `main`. Connecter le repo dans Claude Code.
-- [ ] **S2** — *"Lis CLAUDE.md. Crée le squelette de l'architecture cible avec un écran d'accueil 'EcoQuest' mobile-first, un manifest et un service worker pour que l'appli soit installable. Donne-moi l'URL GitHub Pages à tester."*
-- [ ] **S3** — *"Ajoute une barre de navigation basse à 4 onglets (Aujourd'hui, Défis, Foyer, Profil) avec un écran vide pour chacun. Pouces-friendly."*
+### Phases 0 et 1 — Fondations et MVP solo ✔
 
-### Phase 1 — MVP solo (S4–S15)
-- [ ] **S4** — *"Crée data/gestes.json avec 30 éco-gestes du quotidien répartis en 5 catégories (énergie, alimentation, déplacements, déchets, numérique). Pour chacun : id, libellé court, catégorie, difficulté 1-3, points, CO2 évité estimé en g, source. Utilise uniquement des ordres de grandeur ADEME / Impact CO2 et marque 'à vérifier' si incertain."*
-- [ ] **S5** — *"Écran Aujourd'hui : propose 3 gestes du jour tirés du catalogue, cochables en un tap, avec une micro-animation de validation. Sauvegarde dans state.js."*
-- [ ] **S6** — *"Implémente les points et 5 niveaux dans gamification.js avec tests. Affiche la barre de progression vers le niveau suivant en haut de l'écran Aujourd'hui."*
-- [ ] **S7** — *"Ajoute la série (streak) de jours consécutifs, avec 1 'joker' par semaine pour ne pas casser la série. Tests inclus."*
-- [ ] **S8** — *"Ajoute 8 badges (premier geste, 7 jours, 5 catégories touchées, etc.). Écran Profil : grille des badges obtenus / à débloquer."*
-- [ ] **S9** — *"Compteur d'impact cumulé en équivalents parlants (km en voiture évités, charges de smartphone…), avec la mention 'estimation' et la source."*
-- [ ] **S10** — *"Onboarding en 3 écrans : prénom, 3 catégories prioritaires, heure de rappel. Les gestes du jour tiennent compte des priorités."*
-- [ ] **S11** — *"Permettre d'ajouter un geste personnalisé (libellé + catégorie), sans chiffre CO2."*
-- [ ] **S12** — *"Historique : calendrier du mois avec les jours actifs colorés."*
-- [ ] **S13** — *"Passe d'audit : accessibilité, contraste, taille des cibles, performance. Corrige les 5 problèmes les plus importants."*
-- [ ] **S14** — *"Notification de rappel quotidienne locale à l'heure choisie, désactivable. Explique-moi les limites iOS."*
-- [ ] **S15** — ✅ **Jalon MVP** : utilise l'appli toi-même 7 jours avant la phase 2. Session = noter 3 frictions.
+- [x] **S1** — Repo créé, `CLAUDE.md` déposé, GitHub Pages activé.
+- [x] **S2** — Squelette PWA : écran d'accueil, manifest, service worker.
+- [x] **S3** — Câblage GitHub Pages corrigé, arborescence conforme.
+- [x] **S4** — Premier écran de gestes, `state.js`, `gamification.js`, premier test.
+- [x] **S5** — Navigation basse 4 onglets, catalogue étendu à 30 gestes.
+- [x] **S6** — « Tes 3 gestes du jour », sélection déterministe par date.
+- [x] **S7** — 5 niveaux et barre de progression.
+- [x] **S8** — Série de jours consécutifs + joker hebdomadaire.
+- [x] **S9** — 8 badges et écran Profil.
+- [x] **S10** — Impact cumulé et équivalences parlantes.
 
-### Phase 2 — Le foyer, ton différenciateur (S16–S25)
-- [ ] **S16** — *"Transforme l'état en foyer multi-profils sur le même appareil (parents + enfants), avec sélection du profil actif. Migration douce des données existantes."*
-- [ ] **S17** — *"Mode enfant : textes simplifiés, gestes adaptés, avatars."*
-- [ ] **S18** — *"Défi hebdomadaire de foyer : objectif collectif de points, barre commune."*
-- [ ] **S19** — *"Classement bienveillant du foyer (qui a le plus progressé, pas qui a le plus de points)."*
-- [ ] **S20** — *"Récompenses familiales définies par les parents (ex : soirée film choisie par le gagnant)."*
-- [ ] **S21–S23** — Corrections issues de tes tests en famille.
-- [ ] **S24** — *"Carte d'impact partageable : génère une image verticale (format story) du bilan de la semaine du foyer, exportable."*
-- [ ] **S25** — ✅ **Jalon** : 5 foyers testeurs (amis, collègues) utilisent l'appli.
+### Phase 1bis — Consolidation du socle (S11–S20)
 
-### Phase 3 — Données et social (S26–S35)
-- [ ] **S26–S27** — Backend Supabase (offre gratuite) : comptes, synchronisation du foyer.
-- [ ] **S28–S29** — Défis entre foyers via lien d'invitation.
-- [ ] **S30** — Mesure anonyme : rétention J7 / J30, gestes par foyer. **C'est ta preuve d'impact.**
-- [ ] **S31–S35** — Landing page, politique de confidentialité RGPD, itérations.
+Rien de visible pour l'utilisateur. Tout le reste s'appuie dessus.
 
-### Phase 4 — Échelle (S36+)
-Bêta ouverte, défis thématiques (écoles, entreprises, collectivités), traduction EN.
+- [ ] **S11** — *« Crée `.github/workflows/tests.yml` : à chaque push sur `main` et sur chaque PR, exécuter `node --test tests/`. Aucune dépendance npm. »*
+- [ ] **S12** — *« Ajoute une console de debug embarquée (Eruda, importée depuis un CDN) activée uniquement par le paramètre d'URL `?debug=1` ou 5 taps sur le numéro de version. Jamais chargée en usage normal. »* Sans Mac, c'est le seul moyen de voir ce qui se passe dans une WebView.
+- [ ] **S13** — *« Ajoute un gestionnaire global d'erreurs JS (`window.onerror` + `unhandledrejection`) qui stocke les 50 dernières erreurs dans l'état, consultables et exportables depuis l'écran de debug. »*
+- [ ] **S14** — *« Ajoute dans `js/state.js` un export complet de l'état en JSON et un import avec validation, exposés sur l'écran Profil. L'import refuse un fichier invalide sans écraser l'état existant. Tests inclus. »*
+- [ ] **S15** — *« Vérifie un par un les gestes de `data/gestes.json` marqués `a_verifier: true` contre les ordres de grandeur ADEME / Impact CO2. Corrige valeur et source, ou retire le geste. Dis-moi lesquels tu as retirés. »*
+- [ ] **S16** — *« Même travail pour `EQUIVALENCES_IMPACT` dans `js/gamification.js` : source précise pour chaque facteur, ou retrait de l'équivalence. »*
+- [ ] **S17** — *« Écris README.md pour un visiteur extérieur : promesse, capture, stack, comment lancer les tests, licence. Ajoute LICENSE (MIT). »*
+- [ ] **S18** — *« Onboarding en 3 écrans : prénom, 3 catégories prioritaires, heure de rappel souhaitée. Les gestes du jour tiennent compte des priorités. L'heure est stockée, pas encore utilisée. »*
+- [ ] **S19** — *« Historique : calendrier du mois avec les jours actifs colorés, sur l'écran Profil. »*
+- [ ] **S20** — *« Rédige `privacy.html` : politique de confidentialité exigée par le Play Store, à l'état actuel de l'app (données locales uniquement, aucune collecte). À faire évoluer en phase 4 et en S65. »*
+
+### Phase 2 — Coquille Android (S21–S28)
+
+Objectif : une app installable, buildée sans jamais ouvrir Android Studio.
+
+- [ ] **S21** — *« Ajoute `capacitor.config.json` (appId `app.ecoquest`, appName EcoQuest, `webDir` à la racine) et le `package.json` minimal des dépendances Capacitor. Ces fichiers ne servent qu'à la CI, rien à installer chez moi. Ajoute `/android` au `.gitignore`. »*
+- [ ] **S22** — *« Crée `.github/workflows/android.yml` : sur tag `v*`, installer les dépendances, `npx cap add android`, builder un APK de debug non signé, le publier comme artifact du workflow. »*
+- [ ] **S23** — Tag, télécharger l'APK depuis l'onglet Actions, l'installer. Noter tout ce qui casse dans la WebView.
+- [ ] **S24** — *« Corrige : [ce que tu as vu]. »*
+- [ ] **S25** — 🖥️ Keystore de signature en secret GitHub (voir H2, normalement déjà fait).
+- [ ] **S26** — *« Fais évoluer `android.yml` : builder un AAB signé avec le keystore des secrets, publié comme artifact. Ne logue jamais le keystore ni les mots de passe. »*
+- [ ] **S27** — 🖥️ Fiche Play Store : titre, descriptions, captures, icône, URL de `privacy.html` sur GitHub Pages. Ouvrir une **piste de test fermé**.
+- [ ] **S28** — ✅ **Jalon** : 12 testeurs inscrits et actifs sur la piste fermée. Le compteur des 14 jours démarre ici, et rien ne l'accélère.
+
+### Phase 3 — Notifications, le cœur du produit (S29–S38)
+
+- [ ] **S29** — *« Crée `js/notifications.js` : rappel local quotidien à l'heure choisie, via `@capacitor/local-notifications`. Annulation propre, reprogrammation au changement d'heure. Tests sur le calcul de la prochaine échéance. »*
+- [ ] **S30** — *« La demande d'autorisation n'apparaît qu'après la première validation de geste, dans un écran qui explique la valeur en une phrase. Jamais au premier lancement. Si l'utilisateur refuse, ne jamais redemander. »*
+- [ ] **S31** — *« Le contenu de la notification cite le geste du jour et son bénéfice concret, jamais un rappel générique. Écris 10 variantes, tire au sort. »*
+- [ ] **S32** — *« Réglages de notification sur l'écran Profil : activer/désactiver, changer l'heure, en deux taps maximum. »*
+- [ ] **S33** — *« Ouverture depuis une notification : l'enregistrer dans l'état et afficher directement le geste du jour. »*
+- [ ] **S34** — *« Sur l'écran de debug : notifications envoyées, ouvertes depuis notification, taux d'action sur 7 et 30 jours. Mon tableau de bord, pas celui de l'utilisateur. »*
+- [ ] **S35** — *« Série en danger : si aucun geste validé à 20 h et série en cours, un rappel unique. Jamais deux notifications le même jour. »*
+- [ ] **S36–S37** — Corrections issues de l'usage réel et des retours testeurs.
+- [ ] **S38** — ✅ **Jalon** : 14 jours d'usage avec notifications actives. Noter le taux d'action et 3 frictions. **Sous 20 % de taux d'action, le problème est le contenu, pas la technique** — on itère sur S31 avant d'avancer.
+
+### Phase 4 — Comptes et push serveur (S39–S50)
+
+- [ ] **S39** — 🖥️ Créer le projet Supabase (offre gratuite).
+- [ ] **S40** — *« Propose le schéma Postgres : profils, foyers, gestes validés, séries, historique de notifications, erreurs clientes. RLS activée dès la création — un foyer ne voit jamais les données d'un autre. Donne-moi le SQL à coller. »*
+- [ ] **S41** — *« Crée `js/sync.js` : client Supabase importé en ES module depuis un CDN, authentification par lien magique. »*
+- [ ] **S42** — *« Migration du localStorage vers la base à la première connexion, sans perte. L'app reste pleinement utilisable hors ligne et sans compte. »*
+- [ ] **S43–S44** — Synchronisation bidirectionnelle, conflits résolus au dernier écrit par jour.
+- [ ] **S45** — *« Cron GitHub Actions qui ping la base chaque jour : un projet Supabase gratuit se met en pause après 7 jours sans requête. »*
+- [ ] **S46** — *« Remonte les erreurs JS collectées en S13 vers Supabase. C'est ce qui remplace l'inspecteur Safari que je n'aurai pas. »*
+- [ ] **S47–S48** — Edge Function de scheduling : quoi envoyer, à qui, quand, selon l'historique et le taux d'action.
+- [ ] **S49** — Push FCM depuis l'Edge Function, en complément des notifications locales.
+- [ ] **S50** — ✅ **Jalon** : la notification du jour est choisie côté serveur et mesurée.
+
+### Phase 5 — Le foyer, ton différenciateur (S51–S62)
+
+- [ ] **S51–S52** — Foyer multi-profils, multi-appareils grâce aux comptes.
+- [ ] **S53** — Mode enfant : textes simplifiés, gestes adaptés, avatars.
+- [ ] **S54** — Défi hebdomadaire de foyer : objectif collectif, barre commune.
+- [ ] **S55** — Classement bienveillant : qui a le plus progressé, pas qui a le plus de points.
+- [ ] **S56** — Récompenses familiales définies par les parents.
+- [ ] **S57** — Défis entre foyers par lien d'invitation.
+- [ ] **S58** — Carte d'impact partageable au format story.
+- [ ] **S59–S61** — Corrections issues des tests en famille et chez les testeurs.
+- [ ] **S62** — ✅ **Jalon** : 5 foyers utilisent l'app depuis plus de 30 jours.
+
+### Phase 6 — Bêta et monétisation (S63+)
+
+- [ ] **S63–S64** — Mesure anonyme : rétention J7 / J30, gestes par foyer. **C'est ta preuve d'impact.**
+- [ ] **S65** — `privacy.html` en version RGPD complète : consentement, droit à l'effacement.
+- [ ] **S66–S67** — AdMob : un emplacement discret, jamais sur l'écran de validation d'un geste.
+- [ ] **S68** — Passage en production sur le Play Store.
+- [ ] **S69+** — iOS via runners macOS GitHub (gratuits sur repo public), défis thématiques écoles et collectivités, traduction EN, Play Billing.
 
 ---
 
-## PISTE B — Le rayonnement (1 vendredi sur 1)
-La reconnaissance ne viendra pas du code, elle viendra de ce que tu **montres** et **prouves**.
+## PISTE B — Visibilité et acquisition
 
-- [ ] **V1** — Post LinkedIn : "Je construis une appli écologique 15 min par jour, depuis mon téléphone, avec une IA. Épisode 1."
-- [ ] **V2–V6** — Un post par semaine : ce qui a été construit, ce qui a raté, une capture.
-- [ ] **V7** — Premier chiffre réel (nb de gestes, foyers testeurs).
-- [ ] **V8+** — Contacter 1 acteur par mois (association, école, média éco, collectivité) avec tes chiffres.
+Deux objectifs distincts, à ne plus mélanger.
 
-Le récit "cadre dirigeant + 15 min/jour + IA + famille" est un angle média en soi.
+### B1 — Visibilité professionnelle (LinkedIn, aux jalons seulement)
+
+Pas de journal de bord, pas de rythme hebdomadaire : un post ne sort que quand il apprend quelque chose à un pair qui gère des roadmaps et des équipes. Le projet est l'anecdote, pas le sujet.
+
+- [ ] **B1.1** — À la publication Play Store (mi-octobre) : ce que dix fonctionnalités en 36 heures disent du vrai goulot d'un produit.
+- [ ] **B1.2** — Au premier chiffre de rétention (mi-novembre) : le taux d'action sur notification, un chiffre que personne ne publie.
+- [ ] **B1.3** — Optionnel, sans date : ce que le code assisté change au métier de PM. À écrire seulement s'il y a vraiment quelque chose à dire.
+
+### B2 — Acquisition (en direct, pas en publication)
+
+- [ ] **B2.1** — 12 testeurs depuis l'entourage direct (voir H3). Aucune plateforme.
+- [ ] **B2.2** — Après le jalon rétention : associations de parents d'élèves, enseignants, centres de loisirs.
+- [ ] **B2.3** — Un acteur institutionnel par mois (école, association écolo, collectivité), chiffres en main.
+
+### Le vendredi
+
+Créneau « hors code » : recrutement de testeurs, fiche Play Store, sourcing des chiffres CO2, démarchage. Pas de publication imposée.
+
+---
+
+## Backlog d'audit
+
+Alimenté chaque semaine par la routine automatique « Audit hebdomadaire EcoQuest », qui publie son rapport en artifact (pas de fichier dans le repo). Les constats validés deviennent des items numérotés `A1`, `A2`… traités en priorité sur les nouvelles fonctionnalités.
+
+- [ ] *(vide au 13/09/2026 — premier audit le dimanche 20 septembre)*
 
 ---
 
 ## Indicateurs à suivre
-- Sessions réalisées / semaine (cible : 4)
+
+- Items terminés / semaine (cible réaliste : 12)
+- **Taux d'action sur notification** (cible : > 25 %) — l'indicateur central du produit
+- Rétention J7 des testeurs (cible bêta : > 30 %)
 - Foyers actifs à J30
-- Rétention J7 (cible bêta : > 30 %)
-- Abonnés au récit build in public
+- Erreurs clientes remontées / semaine (doit baisser, pas rester à zéro)

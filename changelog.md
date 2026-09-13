@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-13 — Consolidation des fichiers de pilotage
+- Le repo portait cinq fichiers de pilotage au lieu de deux (`CLAUDE.md`, `CLAUDE-1.md`, `ROADMAP.md`, `ROADMAP-1.md`, `ROADMAP-2.md`). Les versions à jour du 13/09/2026 étaient `CLAUDE-1.md` et `ROADMAP-2.md`, les autres périmées.
+- `CLAUDE.md` remplacé par le contenu de `CLAUDE-1.md` (vision, contraintes, stack cible et architecture mises à jour : rythme 15 min/jour abandonné au profit d'un modèle où la source de vérité de l'avancement est `ROADMAP.md`).
+- `ROADMAP.md` remplacé par le contenu de `ROADMAP-2.md` (rythme 1h/jour, sessions 1 à 10 déjà réalisées cochées, phases 1bis à 6 détaillées, piste B visibilité/acquisition).
+- Dans `ROADMAP.md`, la ligne du backlog d'audit a été corrigée : elle renvoyait à un fichier `cowork-audit-hebdo-ecoquest.md` qui n'existe pas dans le repo. L'audit hebdomadaire est en réalité une routine automatique (« Audit hebdomadaire EcoQuest ») qui publie son rapport en artifact, pas un fichier versionné — la ligne le décrit désormais correctement.
+- `CLAUDE-1.md`, `ROADMAP-1.md` et `ROADMAP-2.md` supprimés. Vérifié qu'aucun fichier du repo ne les référence plus.
+
 ## 2026-09-13 — Session 10 : Compteur d'impact cumulé sur le Profil
 - Ajout dans `js/gamification.js` de `impactCumuleGrammes(état, gestes)`, qui somme les `co2_evite_g` de tous les gestes réellement validés dans `gestesCochesParDate`, toutes dates confondues — **recalculé à la volée à chaque affichage, jamais stocké dans l'état**, pour éviter tout double comptage (comme le niveau et les badges).
 - Ajout de `EQUIVALENCES_IMPACT` (3 équivalents : km en voiture évités, charges de smartphone évitées, douches courtes évitées, avec leur facteur de conversion ADEME / Impact CO2 sourcé) et de `calculerEquivalences(état, gestes)`, qui convertit le total cumulé en ces équivalents parlants.
