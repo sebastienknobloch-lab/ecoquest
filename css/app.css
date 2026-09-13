@@ -389,12 +389,11 @@ html, body {
 .badge-carte--verrouille {
   background: #eceae4;
   box-shadow: none;
-  opacity: 0.75;
 }
 
 .badge-carte--verrouille .badge-libelle,
 .badge-carte--verrouille .badge-description {
-  color: #8a8a8a;
+  color: #5a5a5a;
 }
 
 .badge-carte--obtenu {
