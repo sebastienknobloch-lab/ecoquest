@@ -80,7 +80,7 @@ Règles :
 
 Rien de visible pour l'utilisateur. Tout le reste s'appuie dessus.
 
-- [ ] **S11** — *« Crée `.github/workflows/tests.yml` : à chaque push sur `main` et sur chaque PR, exécuter `node --test tests/`. Aucune dépendance npm. »*
+- [x] **S11** — *« Crée `.github/workflows/tests.yml` : à chaque push sur `main` et sur chaque PR, exécuter `node --test tests/*.test.js`. Aucune dépendance npm. »*
 - [ ] **S12** — *« Ajoute une console de debug embarquée (Eruda, importée depuis un CDN) activée uniquement par le paramètre d'URL `?debug=1` ou 5 taps sur le numéro de version. Jamais chargée en usage normal. »* Sans Mac, c'est le seul moyen de voir ce qui se passe dans une WebView.
 - [ ] **S13** — *« Ajoute un gestionnaire global d'erreurs JS (`window.onerror` + `unhandledrejection`) qui stocke les 50 dernières erreurs dans l'état, consultables et exportables depuis l'écran de debug. »*
 - [ ] **S14** — *« Ajoute dans `js/state.js` un export complet de l'état en JSON et un import avec validation, exposés sur l'écran Profil. L'import refuse un fichier invalide sans écraser l'état existant. Tests inclus. »*

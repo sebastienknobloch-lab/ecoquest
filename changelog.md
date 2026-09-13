@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-13 — Session 11 : CI des tests (`.github/workflows/tests.yml`)
+- Les 7 fichiers de `tests/` existaient mais rien ne les exécutait automatiquement (dette connue listée dans `CLAUDE.md`) : un test cassé pouvait être fusionné sur `main` sans que personne ne le remarque.
+- Ajout de `.github/workflows/tests.yml` : à chaque push sur `main` et sur chaque pull request, un job GitHub Actions installe Node 22 puis exécute `node --test tests/*.test.js` (pas de `npm install` ni `npm ci` : le projet n'a aucune dépendance). Le job échoue visiblement si un test échoue, puisque `node --test` retourne un code de sortie non nul dans ce cas.
+- Commande volontairement `node --test tests/*.test.js` et non `node --test tests/` : sur Node 22, cette dernière forme tente d'exécuter `tests/` comme un module et échoue avec « Cannot find module .../tests ».
+- `ROADMAP.md` : case **S11** cochée, et son prompt corrigé pour citer la bonne commande (`node --test tests/*.test.js` au lieu de `node --test tests/`).
+
 ## 2026-09-13 — Tests pour `js/state.js`
 - `js/state.js` était le seul module du projet sans test, alors que `loadState()` porte trois migrations douces (rattachement de `completedToday` à `gestesCochesParDate`, valeurs par défaut pour `streak`/`joker`, déduction de `joker.dejaUtilise`) qui protègent les données déjà enregistrées par l'utilisateur.
 - Ajout de `tests/state.test.js` : un faux `localStorage` est installé sur `globalThis` avant d'importer `js/state.js`. Couvre le stockage vide, un JSON corrompu, un `localStorage` qui lève une exception à la lecture, chacune des trois migrations (isolément et sans écraser les champs déjà présents), et un aller-retour `saveState` puis `loadState`.
