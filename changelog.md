@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-13 — Tests pour `js/state.js`
+- `js/state.js` était le seul module du projet sans test, alors que `loadState()` porte trois migrations douces (rattachement de `completedToday` à `gestesCochesParDate`, valeurs par défaut pour `streak`/`joker`, déduction de `joker.dejaUtilise`) qui protègent les données déjà enregistrées par l'utilisateur.
+- Ajout de `tests/state.test.js` : un faux `localStorage` est installé sur `globalThis` avant d'importer `js/state.js`. Couvre le stockage vide, un JSON corrompu, un `localStorage` qui lève une exception à la lecture, chacune des trois migrations (isolément et sans écraser les champs déjà présents), et un aller-retour `saveState` puis `loadState`.
+- Aucune modification de `js/state.js` : les 8 cas passent tels quels, aucun défaut réel constaté pendant l'écriture des tests.
+
 ## 2026-09-13 — Correction : cache du service worker non renouvelé
 - La session précédente (« Rendre visible le statut « a_verifier » des gestes ») modifiait `js/views/aujourdhui.js` et `js/views/profil.js` sans renommer le cache dans `sw.js` (resté à `ecoquest-shell-v8`) — oubli par rapport à la pratique systématique des sessions précédentes. Conséquence : le changement était bien fusionné sur `main`, mais toute PWA déjà installée continuait de servir indéfiniment les anciens fichiers JS en cache, sans jamais voir « ordre de grandeur à confirmer ».
 - `sw.js` : cache renommé `ecoquest-shell-v9` pour forcer la mise à jour sur les téléphones déjà installés.
