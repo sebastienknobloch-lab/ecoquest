@@ -1,10 +1,25 @@
-import { calculerBadges } from "../gamification.js";
+import { calculerBadges, calculerEquivalences, impactCumuleGrammes } from "../gamification.js";
 
 export function renderProfil(container, state) {
   container.innerHTML = "";
 
   const section = document.createElement("section");
   section.className = "profil";
+
+  const impactTitre = document.createElement("h2");
+  impactTitre.className = "section-titre";
+  impactTitre.textContent = "🌍 Ton impact cumulé";
+
+  const impactBloc = document.createElement("div");
+  impactBloc.className = "impact-bloc";
+
+  const impactTotal = document.createElement("p");
+  impactTotal.className = "impact-total";
+
+  const impactListe = document.createElement("ul");
+  impactListe.className = "impact-liste";
+
+  impactBloc.append(impactTotal, impactListe);
 
   const titre = document.createElement("h2");
   titre.className = "section-titre";
@@ -17,8 +32,45 @@ export function renderProfil(container, state) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
-  section.append(titre, grille, statusEl);
+  section.append(impactTitre, impactBloc, titre, grille, statusEl);
   container.append(section);
+
+  function afficherImpact(gestes) {
+    const totalGrammes = impactCumuleGrammes(state, gestes);
+    const totalKg = totalGrammes / 1000;
+    impactTotal.textContent =
+      totalGrammes > 0
+        ? `≈ ${totalKg.toFixed(1)} kg de CO2 évités au total (estimation)`
+        : "Valide tes premiers gestes pour voir ton impact cumulé.";
+
+    impactListe.innerHTML = "";
+    if (totalGrammes === 0) return;
+
+    calculerEquivalences(state, gestes).forEach((equivalence) => {
+      if (equivalence.valeur <= 0) return;
+      const li = document.createElement("li");
+      li.className = "impact-item";
+
+      const icone = document.createElement("span");
+      icone.className = "impact-icone";
+      icone.setAttribute("aria-hidden", "true");
+      icone.textContent = equivalence.icone;
+
+      const texte = document.createElement("span");
+      texte.className = "impact-texte";
+
+      const valeur = document.createElement("strong");
+      valeur.textContent = `≈ ${equivalence.valeur} ${equivalence.unite}`;
+
+      const source = document.createElement("small");
+      source.className = "impact-source";
+      source.textContent = `estimation — ${equivalence.source}`;
+
+      texte.append(valeur, source);
+      li.append(icone, texte);
+      impactListe.append(li);
+    });
+  }
 
   function afficherBadges(gestes) {
     grille.innerHTML = "";
@@ -54,13 +106,16 @@ export function renderProfil(container, state) {
       return reponse.json();
     })
     .then((gestes) => {
+      afficherImpact(gestes);
       afficherBadges(gestes);
       statusEl.remove();
     })
     .catch(() => {
-      // Le catalogue ne sert qu'au badge "Toutes les couleurs" : sans lui, les
-      // 7 autres badges restent corrects, seul celui-là reste verrouillé.
+      // Le catalogue sert à la fois à l'impact cumulé et au badge "Toutes les
+      // couleurs" : sans lui, ni l'un ni l'autre ne peuvent être calculés,
+      // mais les 7 autres badges restent corrects.
+      afficherImpact([]);
       afficherBadges([]);
-      statusEl.textContent = "Catalogue indisponible : « Toutes les couleurs » ne peut pas être calculé.";
+      statusEl.textContent = "Catalogue indisponible : impact cumulé et « Toutes les couleurs » non calculables.";
     });
 }

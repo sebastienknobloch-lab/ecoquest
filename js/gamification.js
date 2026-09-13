@@ -317,3 +317,59 @@ export function calculerBadges(state, gestes) {
 
   return BADGES.map((badge) => ({ ...badge, obtenu: obtenus[badge.id] }));
 }
+
+// --- Impact cumulé (CO2 évité) ---
+//
+// Jamais stocké dans l'état : recalculé à la volée à chaque affichage à partir
+// du catalogue (co2_evite_g de chaque geste réellement validé), pour éviter
+// tout double comptage avec les points/niveaux qui suivent leur propre logique.
+// Les équivalences sont des ordres de grandeur ADEME / Impact CO2, toujours à
+// afficher comme "estimation".
+
+export const EQUIVALENCES_IMPACT = [
+  {
+    id: "voiture",
+    icone: "🚗",
+    unite: "km en voiture évités",
+    grammesParUnite: 193,
+    source: "Impact CO2 (ADEME), voiture particulière moyenne (estimation)",
+  },
+  {
+    id: "smartphone",
+    icone: "🔋",
+    unite: "charges de smartphone évitées",
+    grammesParUnite: 8,
+    source: "Impact CO2 (ADEME), recharge d'un smartphone (estimation)",
+  },
+  {
+    id: "douche",
+    icone: "🚿",
+    unite: "douches courtes évitées",
+    grammesParUnite: 300,
+    source: "ADEME, \"Réduire sa consommation d'eau chaude sanitaire\" (estimation)",
+  },
+];
+
+// Total de CO2 évité (grammes), toutes dates confondues, pour tous les gestes
+// réellement validés dans l'état. `gestes` (le catalogue complet) est
+// nécessaire pour connaître le co2_evite_g de chaque geste coché ; omis ou
+// incomplet, les gestes introuvables sont simplement ignorés (total partiel,
+// jamais de plantage).
+export function impactCumuleGrammes(state, gestes) {
+  const gestesParId = new Map((gestes ?? []).map((g) => [g.id, g]));
+  return Object.values(state.gestesCochesParDate || {}).reduce(
+    (total, ids) =>
+      total + ids.reduce((sousTotal, id) => sousTotal + (gestesParId.get(id)?.co2_evite_g ?? 0), 0),
+    0
+  );
+}
+
+// Convertit le total cumulé en équivalents parlants (arrondis à l'unité la
+// plus proche), à partir des facteurs de conversion ci-dessus.
+export function calculerEquivalences(state, gestes) {
+  const totalGrammes = impactCumuleGrammes(state, gestes);
+  return EQUIVALENCES_IMPACT.map((equivalence) => ({
+    ...equivalence,
+    valeur: Math.round(totalGrammes / equivalence.grammesParUnite),
+  }));
+}
