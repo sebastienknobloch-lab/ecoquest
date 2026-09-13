@@ -1,13 +1,21 @@
 import { calculerNiveau, cocherGeste, decocherGeste, selectionDuJour } from "../gamification.js";
 import { dateDuJour } from "../state.js";
 
-const CATEGORIES = [
-  { id: "energie", label: "⚡ Énergie" },
-  { id: "alimentation", label: "🍎 Alimentation" },
-  { id: "deplacements", label: "🚲 Déplacements" },
-  { id: "dechets", label: "♻️ Déchets" },
-  { id: "numerique", label: "💻 Numérique" },
-];
+// Étiquettes lisibles (emoji + libellé) pour les catégories connues. Les
+// données de data/gestes.json restent la seule source de vérité pour la
+// liste des catégories à afficher — cette table ne fournit qu'un habillage,
+// avec un repli sur l'identifiant brut si une catégorie inconnue apparaît.
+export const LIBELLES_CATEGORIES = {
+  energie: "⚡ Énergie",
+  alimentation: "🍎 Alimentation",
+  deplacements: "🚲 Déplacements",
+  dechets: "♻️ Déchets",
+  numerique: "💻 Numérique",
+};
+
+function libelleCategorie(categorieId) {
+  return LIBELLES_CATEGORIES[categorieId] || categorieId;
+}
 
 export function renderAujourdhui(container, initialState, persist) {
   let state = initialState;
@@ -162,14 +170,14 @@ export function renderAujourdhui(container, initialState, persist) {
     return li;
   }
 
-  function creerSectionCategorie(categorie, gestesCategorie, dateISO) {
+  function creerSectionCategorie(categorieId, gestesCategorie, dateISO) {
     const details = document.createElement("details");
     details.className = "categorie";
-    details.dataset.categorieId = categorie.id;
+    details.dataset.categorieId = categorieId;
 
     const summary = document.createElement("summary");
     summary.className = "categorie-titre";
-    summary.textContent = `${categorie.label} (${gestesCategorie.length})`;
+    summary.textContent = `${libelleCategorie(categorieId)} (${gestesCategorie.length})`;
 
     const ul = document.createElement("ul");
     ul.className = "geste-list";
@@ -206,13 +214,16 @@ export function renderAujourdhui(container, initialState, persist) {
 
     categoriesEl.innerHTML = "";
     catalogueSummary.textContent = `Catalogue complet (${gestes.length} gestes)`;
-    CATEGORIES.forEach((categorie) => {
-      const gestesCategorie = gestes.filter((g) => g.categorie === categorie.id);
-      if (gestesCategorie.length === 0) return;
-      const details = creerSectionCategorie(categorie, gestesCategorie, dateISO);
+    // Les catégories affichées viennent des gestes chargés, dans l'ordre de
+    // leur première apparition — jamais d'une liste figée côté vue, pour
+    // qu'une catégorie présente dans les données n'y disparaisse pas.
+    const categoriesPresentes = [...new Set(gestes.map((g) => g.categorie))];
+    categoriesPresentes.forEach((categorieId) => {
+      const gestesCategorie = gestes.filter((g) => g.categorie === categorieId);
+      const details = creerSectionCategorie(categorieId, gestesCategorie, dateISO);
       details.open = premierAffichage
-        ? categorie.id === "energie"
-        : categoriesOuvertes.has(categorie.id);
+        ? categorieId === "energie"
+        : categoriesOuvertes.has(categorieId);
       categoriesEl.append(details);
     });
   }

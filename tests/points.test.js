@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { cocherGeste, decocherGeste, pointsPourDifficulte } from "../js/gamification.js";
+import { LIBELLES_CATEGORIES } from "../js/views/aujourdhui.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gestes = JSON.parse(
@@ -137,6 +138,18 @@ function gesteParId(id) {
   CATEGORIES_VALIDES.forEach((categorie) => {
     const count = gestes.filter((g) => g.categorie === categorie).length;
     assert.equal(count, 6, `catégorie ${categorie} : ${count} gestes au lieu de 6`);
+  });
+}
+
+// Chaque catégorie présente dans le catalogue a une étiquette lisible définie
+// dans la vue aujourd'hui — sinon elle s'afficherait avec son id brut
+{
+  const categoriesPresentes = [...new Set(gestes.map((g) => g.categorie))];
+  categoriesPresentes.forEach((categorieId) => {
+    assert.ok(
+      Object.prototype.hasOwnProperty.call(LIBELLES_CATEGORIES, categorieId),
+      `catégorie "${categorieId}" présente dans le catalogue mais sans étiquette définie dans js/views/aujourdhui.js`
+    );
   });
 }
 
