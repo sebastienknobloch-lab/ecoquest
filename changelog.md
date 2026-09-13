@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-13 — Correction : les catégories du catalogue se refermaient à chaque geste coché
+- Dans l'onglet Aujourd'hui, cocher un geste depuis le catalogue complet (`js/views/aujourdhui.js`) appelait `basculerGeste()` puis `afficherTout()`, qui vidait `categoriesEl` et recréait tous les `<details>` de catégorie — perdant leur attribut `open` à chaque fois. Résultat : toute catégorie dépliée se refermait dès qu'on cochait un geste à l'intérieur.
+- `afficherCatalogueComplet()` relève désormais, avant de vider `categoriesEl`, les ids des catégories actuellement ouvertes (`dataset.categorieId`, ajouté sur chaque `<details class="categorie">`), et repose `open` sur les mêmes après reconstruction.
+- Cela permet aussi de rétablir le comportement annoncé en session 5 et disparu depuis : au tout premier affichage (`categoriesEl` encore vide), la catégorie Énergie s'ouvre par défaut, les autres restent fermées.
+- Aucun changement de structure de l'état ni de la logique de points.
+
 ## 2026-09-13 — Correction : contraste insuffisant sur les badges verrouillés
 - L'écran Profil (session 9) affichait le texte des badges verrouillés en `#8a8a8a` sur fond `#eceae4`, soit 2,87:1, déjà sous le minimum AA de 4,5:1 — et la règle `opacity: 0.75` posée sur `.badge-carte--verrouille` faisait tomber le rendu réel à 2,10:1. L'entrée de changelog de la session 9 affirmait à tort un « contraste AA » respecté ; corrigée ci-dessous dans son entrée d'origine.
 - `css/app.css` : suppression de `opacity: 0.75` sur `.badge-carte--verrouille`, et texte de `.badge-carte--verrouille .badge-libelle`/`.badge-description` assombri de `#8a8a8a` à `#5a5a5a` (5,74:1 sur `#eceae4`, au-dessus du minimum AA). La distinction visuelle obtenu/verrouillé (fond grisé + cadenas) est inchangée.

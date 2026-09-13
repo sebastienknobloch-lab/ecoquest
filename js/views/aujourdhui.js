@@ -165,6 +165,7 @@ export function renderAujourdhui(container, initialState, persist) {
   function creerSectionCategorie(categorie, gestesCategorie, dateISO) {
     const details = document.createElement("details");
     details.className = "categorie";
+    details.dataset.categorieId = categorie.id;
 
     const summary = document.createElement("summary");
     summary.className = "categorie-titre";
@@ -192,12 +193,27 @@ export function renderAujourdhui(container, initialState, persist) {
   }
 
   function afficherCatalogueComplet(dateISO) {
+    // Reconstruire les <details> de catégorie perd leur attribut `open` : on
+    // relève celles qui étaient dépliées pour les redéplier après coup. Au
+    // tout premier affichage, aucune catégorie n'existe encore : on ouvre
+    // Énergie par défaut, comme annoncé en session 5.
+    const premierAffichage = categoriesEl.childElementCount === 0;
+    const categoriesOuvertes = new Set(
+      Array.from(categoriesEl.querySelectorAll(".categorie[open]")).map(
+        (details) => details.dataset.categorieId,
+      ),
+    );
+
     categoriesEl.innerHTML = "";
     catalogueSummary.textContent = `Catalogue complet (${gestes.length} gestes)`;
     CATEGORIES.forEach((categorie) => {
       const gestesCategorie = gestes.filter((g) => g.categorie === categorie.id);
       if (gestesCategorie.length === 0) return;
-      categoriesEl.append(creerSectionCategorie(categorie, gestesCategorie, dateISO));
+      const details = creerSectionCategorie(categorie, gestesCategorie, dateISO);
+      details.open = premierAffichage
+        ? categorie.id === "energie"
+        : categoriesOuvertes.has(categorie.id);
+      categoriesEl.append(details);
     });
   }
 
