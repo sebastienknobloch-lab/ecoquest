@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-13 — Correction : la liste des catégories du catalogue n'était plus dérivée des données
+- La liste des 5 catégories existait en trois exemplaires : la constante `CATEGORIES` de `js/views/aujourdhui.js`, les données de `data/gestes.json`, et `CATEGORIES_VALIDES` dans `tests/points.test.js`. `afficherCatalogueComplet()` itérait sur la constante de la vue : une catégorie présente dans les données mais absente de cette liste aurait disparu silencieusement du catalogue complet, alors que `selectionDuJour()` l'aurait quand même proposée dans les 3 gestes du jour.
+- `js/views/aujourdhui.js` : `afficherCatalogueComplet()` construit désormais la liste des catégories à afficher directement à partir des gestes chargés (ordre de première apparition), au lieu d'une liste figée côté vue. La constante devient `LIBELLES_CATEGORIES` (exportée), une simple table d'étiquettes lisibles (emoji + libellé) utilisée via `libelleCategorie()`, avec repli sur l'identifiant brut si une catégorie inconnue apparaît dans les données.
+- `tests/points.test.js` : ajout d'une assertion qui échoue si une catégorie du catalogue n'a pas d'étiquette définie dans `LIBELLES_CATEGORIES`.
+- `sw.js` : cache renommé `ecoquest-shell-v11` pour forcer la mise à jour sur les téléphones déjà installés.
+- Aucun changement d'état, aucun nouveau fichier.
+
 ## 2026-09-13 — Correction : cache du service worker non renouvelé (à nouveau)
 - Le correctif précédent (« les catégories du catalogue se refermaient à chaque geste coché ») modifiait `js/views/aujourdhui.js` sans renommer le cache dans `sw.js` (resté à `ecoquest-shell-v9`) — même oubli déjà survenu et corrigé une fois dans ce projet (voir l'entrée « cache du service worker non renouvelé » plus bas), qui aurait dû être vérifié systématiquement à chaque édition de fichier JS. Conséquence : la correction était bien fusionnée sur `main`, mais toute PWA déjà installée continuait de servir l'ancien `aujourdhui.js` en cache, donc les catégories continuaient à se refermer.
 - `sw.js` : cache renommé `ecoquest-shell-v10` pour forcer la mise à jour sur les téléphones déjà installés.
