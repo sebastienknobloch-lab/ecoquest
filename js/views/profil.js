@@ -1,4 +1,9 @@
-import { calculerBadges, calculerEquivalences, impactCumuleGrammes } from "../gamification.js";
+import {
+  calculerBadges,
+  calculerEquivalences,
+  impactCumuleGrammes,
+  nombreGestesAVerifier,
+} from "../gamification.js";
 
 export function renderProfil(container, state) {
   container.innerHTML = "";
@@ -16,10 +21,13 @@ export function renderProfil(container, state) {
   const impactTotal = document.createElement("p");
   impactTotal.className = "impact-total";
 
+  const impactAVerifier = document.createElement("p");
+  impactAVerifier.className = "impact-a-verifier";
+
   const impactListe = document.createElement("ul");
   impactListe.className = "impact-liste";
 
-  impactBloc.append(impactTotal, impactListe);
+  impactBloc.append(impactTotal, impactAVerifier, impactListe);
 
   const titre = document.createElement("h2");
   titre.className = "section-titre";
@@ -42,6 +50,13 @@ export function renderProfil(container, state) {
       totalGrammes > 0
         ? `≈ ${totalKg.toFixed(1)} kg de CO2 évités au total (estimation)`
         : "Valide tes premiers gestes pour voir ton impact cumulé.";
+
+    const nbAVerifier = nombreGestesAVerifier(state, gestes);
+    impactAVerifier.hidden = nbAVerifier === 0;
+    impactAVerifier.textContent =
+      nbAVerifier > 0
+        ? `Dont ${nbAVerifier} geste${nbAVerifier > 1 ? "s" : ""} validé${nbAVerifier > 1 ? "s" : ""} basé${nbAVerifier > 1 ? "s" : ""} sur un ordre de grandeur encore à confirmer.`
+        : "";
 
     impactListe.innerHTML = "";
     if (totalGrammes === 0) return;

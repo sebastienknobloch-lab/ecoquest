@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-13 — Rendre visible le statut « a_verifier » des gestes
+- 25 des 30 gestes de `data/gestes.json` portent `"a_verifier": true`, mais ce champ n'était lu nulle part : leur chiffre CO2 s'affichait exactement comme celui des gestes sourcés définitivement, sans distinction pour l'utilisateur. Aucune valeur ni source du catalogue n'a été modifiée — seul l'affichage change.
+- Onglet Aujourd'hui (`js/views/aujourdhui.js`) : quand `geste.a_verifier` est vrai, le détail sous chaque geste affiche désormais « ordre de grandeur à confirmer — [source] » au lieu de « ≈ X g CO2 évités (estimation) — [source] », pour ne pas présenter un chiffre non sourcé précisément avec la même assurance qu'un chiffre vérifié.
+- `js/gamification.js` : ajout de `nombreGestesAVerifier(état, gestes)`, qui compte les gestes validés (toutes dates confondues, comme `impactCumuleGrammes`) dont `co2_evite_g` repose encore sur un `a_verifier`. **Recalculé à la volée, jamais stocké dans l'état**, même règle que le reste des dérivés (niveau, badges, impact).
+- Écran Profil (`js/views/profil.js`) : sous le total d'impact cumulé, nouvelle ligne discrète (« Dont X gestes validés basés sur un ordre de grandeur encore à confirmer. »), masquée quand ce compte est à 0.
+- `css/app.css` : style `.impact-a-verifier` (texte discret, `#6a6a6a` sur fond blanc, contraste AA conforme comme `.impact-source`).
+- `tests/impact.test.js` : ajout de tests pour `nombreGestesAVerifier` (0 quand rien à confirmer, comptage correct sur plusieurs dates sans déduplication, robustesse sans catalogue).
+- `tests/points.test.js` : ajout d'un test qui échoue si un geste du catalogue sans `a_verifier` (donc considéré sourcé définitivement) a une source vide.
+
 ## 2026-09-13 — Consolidation des fichiers de pilotage
 - Le repo portait cinq fichiers de pilotage au lieu de deux (`CLAUDE.md`, `CLAUDE-1.md`, `ROADMAP.md`, `ROADMAP-1.md`, `ROADMAP-2.md`). Les versions à jour du 13/09/2026 étaient `CLAUDE-1.md` et `ROADMAP-2.md`, les autres périmées.
 - `CLAUDE.md` remplacé par le contenu de `CLAUDE-1.md` (vision, contraintes, stack cible et architecture mises à jour : rythme 15 min/jour abandonné au profit d'un modèle où la source de vérité de l'avancement est `ROADMAP.md`).

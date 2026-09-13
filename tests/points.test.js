@@ -120,6 +120,18 @@ function gesteParId(id) {
   });
 }
 
+// Un geste sans a_verifier (donc considéré sourcé définitivement) doit avoir une source non vide
+{
+  gestes
+    .filter((g) => !g.a_verifier)
+    .forEach((geste) => {
+      assert.ok(
+        typeof geste.source === "string" && geste.source.trim().length > 0,
+        `${geste.id} : sourcé sans a_verifier mais source vide`
+      );
+    });
+}
+
 // Chaque catégorie contient exactement 6 gestes (5 catégories x 6 = 30)
 {
   CATEGORIES_VALIDES.forEach((categorie) => {

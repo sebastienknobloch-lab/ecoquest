@@ -152,7 +152,9 @@ export function renderAujourdhui(container, initialState, persist) {
     titre.textContent = geste.libelle;
 
     const detail = document.createElement("small");
-    detail.textContent = `≈ ${geste.co2_evite_g} g CO2 évités (estimation) — ${geste.source}`;
+    detail.textContent = geste.a_verifier
+      ? `ordre de grandeur à confirmer — ${geste.source}`
+      : `≈ ${geste.co2_evite_g} g CO2 évités (estimation) — ${geste.source}`;
 
     texte.append(titre, detail);
     label.append(checkbox, texte);
