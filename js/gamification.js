@@ -364,6 +364,19 @@ export function impactCumuleGrammes(state, gestes) {
   );
 }
 
+// Nombre de gestes validés (toutes dates confondues, doublons comptés comme dans
+// impactCumuleGrammes) dont le co2_evite_g repose encore sur un ordre de grandeur
+// à confirmer (`a_verifier: true` dans le catalogue), pour ne jamais présenter ces
+// chiffres avec la même fiabilité que les gestes déjà sourcés précisément.
+export function nombreGestesAVerifier(state, gestes) {
+  const gestesParId = new Map((gestes ?? []).map((g) => [g.id, g]));
+  return Object.values(state.gestesCochesParDate || {}).reduce(
+    (total, ids) =>
+      total + ids.reduce((sousTotal, id) => sousTotal + (gestesParId.get(id)?.a_verifier ? 1 : 0), 0),
+    0
+  );
+}
+
 // Convertit le total cumulé en équivalents parlants (arrondis à l'unité la
 // plus proche), à partir des facteurs de conversion ci-dessus.
 export function calculerEquivalences(state, gestes) {
