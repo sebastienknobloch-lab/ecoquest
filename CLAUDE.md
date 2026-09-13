@@ -1,53 +1,93 @@
 # EcoQuest — Contexte projet pour Claude Code
 
-> Nom de code provisoire. À placer à la racine du repo. Claude Code le lit à chaque session.
+> À la racine du repo. Claude Code le lit à chaque session.
 
 ## Vision
+
 Application mobile qui gamifie les éco-gestes du quotidien **à l'échelle du foyer** (parents + enfants).
-Promesse : "Chaque geste compte, et en famille ça se voit."
+
+Promesse : « Chaque geste compte, et en famille ça se voit. »
+
 Objectif : créer un engagement écologique **mesurable** (gestes réalisés, CO2 évité estimé, rétention) et **partageable** (cartes d'impact, défis entre foyers).
 
+**Le rappel quotidien est le cœur du produit, pas un accessoire.** Ce qui fait revenir un utilisateur, c'est la notification du jour — pas la taille du catalogue. Toute décision de conception se tranche avec cette phrase.
+
 ## Contraintes non négociables
-- **Mobile only** : PWA installable, conçue pour écrans 360–430 px, usage à une main. Aucune version desktop.
-- **Zéro build** : HTML / CSS / JS vanilla (modules ES). Déploiement GitHub Pages depuis `main`.
-- **Le propriétaire code uniquement depuis son téléphone via Claude Code, 15 min/jour.** Chaque tâche doit tenir en une session : petite, testable sur téléphone, sans manipulation technique manuelle.
-- **Données** : localStorage en phases 1–2, clé `ecoquest-v1`. Toute nouvelle propriété est ajoutée avec une valeur par défaut dans `loadState()` (migration douce, jamais de perte de données).
-- **Chiffres d'impact** : uniquement issus de sources citées (ADEME / Impact CO2), stockés dans `data/gestes.json` avec un champ `source`. Toujours affichés comme "estimation".
+
+- **Mobile only** : conçue pour écrans 360–430 px, usage à une main. Aucune version desktop.
+- **Zéro build côté auteur** : HTML / CSS / JS vanilla (modules ES). Aucun bundler, aucun transpileur, aucun `npm install` à lancer pour travailler. Les dépendances externes s'importent en ES module depuis un CDN (esm.sh / jsDelivr). npm et Gradle n'existent que dans GitHub Actions.
+- **Pas de React, pas de Vite, pas de TypeScript.** Décision arrêtée le 13/09/2026 : le gain est nul à cette échelle et le coût casse la contrainte ci-dessus.
+- **Le propriétaire code uniquement depuis son téléphone via Claude Code, 15 min/jour.** Chaque tâche tient en une session : petite, testable sur téléphone, sans manipulation technique manuelle. Toute étape qui exige une machine est listée explicitement comme « hors session » dans ROADMAP.md.
+- **Données** : localStorage (clé `ecoquest-v1`) jusqu'à la phase 4, puis synchronisation Supabase. Toute nouvelle propriété est ajoutée avec une valeur par défaut dans `loadState()` (migration douce, jamais de perte de données).
+- **Chiffres d'impact** : uniquement issus de sources citées (ADEME / Impact CO2), stockés avec un champ `source`. Toujours affichés comme « estimation ». Aucun chiffre ne part en bêta publique avec `a_verifier: true`.
 - **Accessibilité** : contraste AA, cibles tactiles ≥ 44 px, textes compréhensibles par un enfant de 10 ans.
-- **Gamification positive** : pas de culpabilisation, pas de dark patterns, notifications sobres et désactivables.
+- **Gamification positive** : pas de culpabilisation, pas de dark patterns.
+- **Économie de la permission notification** : la demande d'autorisation n'arrive **jamais** au premier lancement, mais après la première validation de geste. Contenu toujours spécifique (jamais « N'oublie pas tes gestes ! »), fréquence plafonnée à 1/jour, désactivation en deux taps. On a un seul essai par utilisateur.
+
+## Stack cible
+
+| Couche | Choix |
+| --- | --- |
+| Front | HTML / CSS / JS vanilla, modules ES |
+| Coquille mobile | Capacitor (Android d'abord), `webDir` = racine du repo |
+| Notifications locales | `@capacitor/local-notifications` |
+| Push serveur | FCM, déclenché par une Edge Function Supabase |
+| Backend | Supabase (Postgres, Auth, Storage, Edge Functions, cron) — offre gratuite |
+| Monétisation | AdMob (`@capacitor-community/admob`), puis Play Billing |
+| Web statique | GitHub Pages : landing + politique de confidentialité uniquement |
+| CI / build | GitHub Actions (tests, génération et signature de l'AAB) |
+| Distribution | Google Play (Android). iOS hors périmètre. |
+
+Décisions écartées, à ne pas rouvrir sans raison nouvelle : Vercel (inutile, l'app est empaquetée dans l'APK), Expo / React Native (réécriture pour un gain limité aux widgets et Live Activities iOS), Firebase comme base de données (NoSQL mal adapté aux classements et séries), backend maison.
 
 ## Architecture cible
+
 ```
 /index.html
 /manifest.webmanifest
 /sw.js
 /css/app.css
-/js/app.js            → routeur + init
-/js/state.js          → loadState / saveState / migrations
-/js/gamification.js   → points, niveaux, séries, badges
-/js/views/*.js        → un fichier par écran
-/data/gestes.json     → catalogue des gestes
+/js/app.js              → routeur + init
+/js/state.js            → loadState / saveState / migrations / export-import
+/js/gamification.js     → points, niveaux, séries, badges, impact
+/js/notifications.js    → programmation et annulation des rappels
+/js/sync.js             → client Supabase (phase 4+)
+/js/views/*.js          → un fichier par écran
+/data/gestes.json       → catalogue des gestes
 /icons/
-/tests/*.test.js      → tests logiques exécutables avec node
-CHANGELOG.md
+/tests/*.test.js        → tests logiques, exécutables avec `node --test`
+/.github/workflows/     → tests.yml, android.yml
+/privacy.html           → politique de confidentialité (exigée par le Play Store)
+capacitor.config.json
+changelog.md            → en minuscules, c'est le nom réel du fichier
+CLAUDE.md
+ROADMAP.md
+README.md
+LICENSE
 ```
 
+Le dossier `/android` **n'est jamais commité** : il est généré à la volée par GitHub Actions (`npx cap add android`) à chaque build. Ne jamais l'éditer à la main, ne jamais demander à l'auteur de l'ouvrir.
+
 ## Méthode de travail (à respecter à chaque session)
+
 1. Avant de coder : résumer en 3 lignes ce qui va changer.
 2. Modifications ciblées. Pas de réécriture complète d'un fichier sans nécessité.
-3. Toute logique de gamification est couverte par un test dans `/tests`.
-4. Fin de session : commit explicite, mise à jour de `CHANGELOG.md`, puis afficher **"Comment tester sur mobile"** en 3 étapes maximum.
-5. Mettre à jour la section "État actuel" ci-dessous.
+3. Toute logique de gamification, de série ou de programmation de notification est couverte par un test dans `/tests`.
+4. Fin de session : commit explicite, entrée dans `changelog.md`, **cocher la case correspondante dans `ROADMAP.md`**, puis afficher « Comment tester sur mobile » en 3 étapes maximum.
+5. Ne rien écrire dans une section « état actuel » de ce fichier : elle n'existe plus.
 
-## État actuel
-- Session 1 : repo initialisé, `CLAUDE.md` déposé (fait hors Claude Code).
-- Session 2 : squelette PWA créé — écran d'accueil mobile-first, `manifest.webmanifest`, `sw.js`, `css/app.css`, `js/app.js`, icônes placeholder. Voir `changelog.md`.
-- Session 3 : correction du câblage GitHub Pages — `app.css` et les icônes traînaient à la racine au lieu de `css/` et `icons/`, et `js/app.js`, `manifest.webmanifest`, `sw.js` n'existaient pas encore alors qu'`index.html` les référençait déjà. Fichiers déplacés/créés à leur place, page testée conforme à l'architecture cible. Voir `changelog.md`.
-- Session 4 : premier écran de gestes. `data/gestes.json` (5 gestes sourcés ADEME/Impact CO2), `js/state.js` (localStorage `ecoquest-v1`, migration douce), `js/gamification.js` (+10 points par geste coché, retrait au décochage), écran unique avec total de points + liste de gestes cochables (cibles ≥ 44px), test `tests/points.test.js`. Voir `changelog.md`.
-- Session 5 : navigation basse à 4 onglets (Aujourd'hui, Défis, Foyer, Profil) avec routeur minimal `js/app.js` + `js/views/*.js` conformes à l'architecture cible ; `data/gestes.json` étendu à 30 gestes (5 catégories x 6, champs `libelle`/`difficulte`/`points`/`co2_evite_g`/`source`, `a_verifier` sur les ordres de grandeur incertains) ; `js/gamification.js` lit désormais les points du geste (barème 10/20/30 selon difficulté) ; onglet Aujourd'hui groupé par catégorie en sections repliables ; `sw.js` en `ecoquest-shell-v3`. Voir `changelog.md`.
-- Session 6 : onglet Aujourd'hui remplacé par « Tes 3 gestes du jour », sélection déterministe par date (`selectionDuJour()` dans `js/gamification.js`, 1 geste dans chacune de 3 catégories différentes, stable dans la journée, change à minuit) ; `js/state.js` stocke désormais les gestes cochés par date dans `gestesCochesParDate` (migration douce depuis l'ancien `completedToday`, aucune perte de points) ; catalogue complet des 30 gestes toujours accessible en section repliée en bas d'écran ; micro-animation de validation au tap, désactivée si `prefers-reduced-motion` ; tests `tests/points.test.js` (mis à jour) et `tests/selection.test.js` (nouveau) ; `sw.js` en `ecoquest-shell-v4`. Voir `changelog.md`.
-- Session 7 : 5 niveaux de progression. `calculerNiveau(points)` dans `js/gamification.js` (seuils 0/50/150/300/500, niveau + points restants + pourcentage), calculé à la volée depuis `state.points` — jamais stocké dans l'état, pas de double comptage. Barre de progression visuelle + niveau affiché en haut de l'onglet Aujourd'hui (`js/views/aujourdhui.js`), mise à jour à chaque geste coché/décoché. Tests `tests/niveaux.test.js` (nouveau). `sw.js` en `ecoquest-shell-v5`. Voir `changelog.md`.
-- Session 8 : streak de jours consécutifs + joker hebdomadaire. `state.streak` (`actuel`, `dernierJourValide`, `dernierJourViaJoker`) et `state.joker` (`disponible`, `semaine`) mis à jour dans `cocherGeste()`/`decocherGeste()` (`js/gamification.js`) uniquement quand un jour passe de 0 à 1 geste validé (ou inversement) — jamais de double comptage, décocher annule proprement l'incrément. 1 joker par semaine ISO (`semaineISO()`) permet de sauter un jour manqué sans casser le streak, recharge automatique à chaque nouvelle semaine. Migration douce dans `loadState()` (`js/state.js`) si `streak`/`joker` sont absents d'un état existant. Streak actuel + disponibilité du joker affichés sur l'onglet Aujourd'hui. Tests `tests/streak.test.js` (nouveau). `sw.js` en `ecoquest-shell-v6`. Voir `changelog.md`.
-- Session 9 : 8 badges + écran Profil. `calculerBadges(état, gestes)` dans `js/gamification.js` recalcule les 8 badges à la volée à chaque affichage à partir de l'état existant (points, streak, joker, historique des gestes cochés) — jamais stockés séparément. Extension minimale du streak/joker pour porter les deux signaux qui leur manquaient : `joker.dejaUtilise` (jamais réinitialisé) et `streak.jokerUtiliseDansStreak`, mis à jour dans `cocherGeste()`/`decocherGeste()`. Migration douce dans `js/state.js` (état ancien sans `streak`/`joker`, ou joker déjà entamé avant cette version). Écran Profil (`js/views/profil.js`) : grille de 8 badges, obtenus (couleur + bordure) visuellement distincts des à débloquer (grisés + 🔒). Tests `tests/badges.test.js` (nouveau, une condition par badge). `sw.js` en `ecoquest-shell-v7`. Voir `changelog.md`.
-- Session 10 : compteur d'impact cumulé sur l'écran Profil. `impactCumuleGrammes(état, gestes)` (`js/gamification.js`) somme les `co2_evite_g` de tous les gestes validés dans `gestesCochesParDate`, toutes dates confondues — calculé à la volée à chaque affichage, jamais stocké dans l'état, pour éviter tout double comptage. `calculerEquivalences(état, gestes)` convertit ce total en 3 équivalents parlants (km en voiture évités, charges de smartphone évitées, douches courtes évitées), chacun avec un facteur de conversion ADEME/Impact CO2 sourcé (`EQUIVALENCES_IMPACT`) et affiché avec la mention "estimation". Nouveau bloc « 🌍 Ton impact cumulé » en haut de l'onglet Profil (`js/views/profil.js`). Aucun nouveau champ d'état, donc aucune migration nécessaire dans `js/state.js`. Test `tests/impact.test.js` (nouveau). `sw.js` en `ecoquest-shell-v8`. Voir `changelog.md`.
-- À vérifier par Sébastien : activation de GitHub Pages sur `main` (Settings → Pages) si l'URL de test ne répond pas ; les gestes marqués `"a_verifier": true` dans `data/gestes.json` ont des ordres de grandeur de CO2 estimés à affiner avec une source ADEME/Impact CO2 précise ; les facteurs de conversion des équivalences d'impact cumulé (`EQUIVALENCES_IMPACT` dans `js/gamification.js` : 193 g/km voiture, 8 g/charge smartphone, 300 g/douche courte) sont des ordres de grandeur ADEME/Impact CO2 à affiner avec une source précise, comme les gestes `a_verifier`.
+## Où en est le projet
+
+**Une seule source de vérité pour l'avancement : les cases à cocher de `ROADMAP.md`.** Le détail de ce qui a été fait est dans `changelog.md`. Ce fichier-ci ne décrit que la cible et les règles.
+
+La session du jour est **toujours la première case non cochée de ROADMAP.md**, dans l'ordre. Une session sautée n'est pas perdue : la file avance uniquement quand un item est terminé.
+
+Sessions 1 à 10 : réalisées. Socle PWA, catalogue de 30 gestes, sélection de 3 gestes/jour, points, 5 niveaux, série avec joker hebdomadaire, 8 badges, impact cumulé avec équivalences, navigation à 4 onglets, tests unitaires par module. Tout le dérivé (niveau, badges, impact) est recalculé à la volée depuis `state` et jamais stocké — conserver cette règle.
+
+## Dette connue, à traiter en priorité
+
+- Plusieurs gestes de `data/gestes.json` portent `a_verifier: true`.
+- Les facteurs d'équivalence dans `js/gamification.js` (`EQUIVALENCES_IMPACT` : 193 g/km voiture, 8 g/charge smartphone, 300 g/douche) sont des ordres de grandeur à sourcer précisément.
+- Les tests existent mais rien ne les exécute automatiquement.
+- Aucun export des données : un vidage du stockage du navigateur détruit tout l'historique de l'utilisateur.
+- Repo sans README, sans description, sans licence.
