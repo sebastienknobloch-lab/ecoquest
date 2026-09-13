@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 — Correction : cache du service worker non renouvelé
+- La session précédente (« Rendre visible le statut « a_verifier » des gestes ») modifiait `js/views/aujourdhui.js` et `js/views/profil.js` sans renommer le cache dans `sw.js` (resté à `ecoquest-shell-v8`) — oubli par rapport à la pratique systématique des sessions précédentes. Conséquence : le changement était bien fusionné sur `main`, mais toute PWA déjà installée continuait de servir indéfiniment les anciens fichiers JS en cache, sans jamais voir « ordre de grandeur à confirmer ».
+- `sw.js` : cache renommé `ecoquest-shell-v9` pour forcer la mise à jour sur les téléphones déjà installés.
+
 ## 2026-09-13 — Rendre visible le statut « a_verifier » des gestes
 - 25 des 30 gestes de `data/gestes.json` portent `"a_verifier": true`, mais ce champ n'était lu nulle part : leur chiffre CO2 s'affichait exactement comme celui des gestes sourcés définitivement, sans distinction pour l'utilisateur. Aucune valeur ni source du catalogue n'a été modifiée — seul l'affichage change.
 - Onglet Aujourd'hui (`js/views/aujourdhui.js`) : quand `geste.a_verifier` est vrai, le détail sous chaque geste affiche désormais « ordre de grandeur à confirmer — [source] » au lieu de « ≈ X g CO2 évités (estimation) — [source] », pour ne pas présenter un chiffre non sourcé précisément avec la même assurance qu'un chiffre vérifié.
