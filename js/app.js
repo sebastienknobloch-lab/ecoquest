@@ -58,11 +58,25 @@ tabButtons.forEach((btn) => {
   });
 });
 
+// Sans ce rechargement automatique, un nouveau service worker (cache renommé)
+// s'installe bien en tâche de fond mais la page déjà ouverte continue de tourner
+// avec les anciens fichiers JS tant qu'elle n'est pas rechargée manuellement —
+// bug déjà rencontré plusieurs fois sur ce projet (voir changelog.md).
+function surveillerMiseAJourServiceWorker() {
+  let dejaRecharge = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (dejaRecharge) return;
+    dejaRecharge = true;
+    window.location.reload();
+  });
+}
+
 function initServiceWorker() {
   if (!("serviceWorker" in navigator)) {
     setStatus(isInstalled() ? "Application installée ✅" : "Prête");
     return;
   }
+  surveillerMiseAJourServiceWorker();
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("./sw.js")

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-14 — Correction : `?debug=1` sans effet sur un téléphone où l'app était déjà installée
+- Après le merge de la session 12, `?debug=1` ne déclenchait rien sur un téléphone où l'app était déjà installée : le nouveau service worker (cache `v12`) s'installait bien en tâche de fond, mais l'ancien service worker actif continuait de servir l'ancien `js/app.js` (sans la logique de debug) tant que la page n'était pas rechargée manuellement — exactement le même type de bug que les trois occurrences précédentes de « cache du service worker non renouvelé » listées plus bas dans ce journal, sauf que cette fois le nom de cache avait bien été changé.
+- `js/app.js` : ajout de `surveillerMiseAJourServiceWorker()`, qui recharge automatiquement la page une seule fois dès qu'un nouveau service worker prend le contrôle (`controllerchange`), au lieu de compter sur une réouverture manuelle. Corrige la classe de bug à la racine pour toutes les sessions futures, pas seulement celle-ci.
+- `sw.js` : cache renommé `ecoquest-shell-v13`.
+- Sur un téléphone déjà installé, il faut encore rouvrir l'app une fois après ce correctif pour que le nouveau service worker (celui qui recharge automatiquement) prenne le contrôle ; les mises à jour suivantes se rechargeront ensuite seules.
+
 ## 2026-09-14 — Session 12 : Console de debug embarquée (Eruda)
 - Sans Mac ni câble USB, il n'y avait aucun moyen de voir ce qui se passe réellement dans la WebView Android une fois l'app empaquetée — dette listée dans `ROADMAP.md` (S12).
 - Ajout de `js/debug.js` : `activerConsoleDebug()` charge [Eruda](https://eruda.liriliri.io/) via `import()` dynamique depuis `https://esm.sh/eruda@3` (aucune dépendance ajoutée au repo, conforme à la contrainte zéro build) puis appelle `eruda.init()`. Si le CDN est injoignable (hors-ligne), l'échec est silencieux et n'empêche jamais l'app de fonctionner normalement.
