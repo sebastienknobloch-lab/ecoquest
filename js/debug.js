@@ -2,7 +2,13 @@
 // sans Mac ni câble. Jamais chargée en usage normal : uniquement si l'URL
 // contient ?debug=1, ou après 5 taps sur le numéro de version (écran Profil).
 
-const ERUDA_MODULE_URL = "https://esm.sh/eruda@3";
+// Deux CDN essayés dans l'ordre : si l'un est bloqué ou indisponible sur le
+// réseau de l'utilisateur, l'autre prend le relais (conforme à CLAUDE.md :
+// esm.sh / jsDelivr).
+const ERUDA_MODULE_URLS = [
+  "https://esm.sh/eruda@3",
+  "https://cdn.jsdelivr.net/npm/eruda@3/+esm",
+];
 const NB_TAPS_REQUIS = 5;
 const DELAI_MAX_ENTRE_TAPS_MS = 2000;
 
@@ -40,16 +46,30 @@ export function creerCompteurTaps(nbRequis = NB_TAPS_REQUIS, delaiMaxMs = DELAI_
 
 let erudaChargee = false;
 
+// Sans navigateur relié à un ordinateur, un échec de chargement silencieux
+// serait invisible pour l'utilisateur — ici justement l'outil censé lui
+// montrer les erreurs. En cas d'échec des deux CDN, on le prévient donc
+// explicitement plutôt que de ne rien faire.
 export async function activerConsoleDebug() {
   if (erudaChargee) return;
   erudaChargee = true;
-  try {
-    const module = await import(/* webpackIgnore: true */ ERUDA_MODULE_URL);
-    const eruda = module.default || module;
-    eruda.init();
-  } catch {
-    // CDN indisponible (hors-ligne, par exemple) : pas de console, pas de crash.
-    erudaChargee = false;
+
+  for (const url of ERUDA_MODULE_URLS) {
+    try {
+      const module = await import(/* webpackIgnore: true */ url);
+      const eruda = module.default || module;
+      eruda.init();
+      return;
+    } catch {
+      // CDN suivant.
+    }
+  }
+
+  erudaChargee = false;
+  if (typeof window !== "undefined" && typeof window.alert === "function") {
+    window.alert(
+      "Console de debug : échec du chargement depuis les deux CDN (esm.sh, jsDelivr). Vérifie la connexion réseau."
+    );
   }
 }
 
