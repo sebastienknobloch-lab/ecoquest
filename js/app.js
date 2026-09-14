@@ -4,6 +4,8 @@ import { renderDefis } from "./views/defis.js";
 import { renderFoyer } from "./views/foyer.js";
 import { renderProfil } from "./views/profil.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
+import { afficherEcranDebug } from "./views/debug.js";
+import { installerGestionnaireErreurs } from "./erreurs.js";
 
 const VUES = {
   aujourdhui: renderAujourdhui,
@@ -107,9 +109,15 @@ function initServiceWorker() {
   });
 }
 
+// Toujours actif (pas seulement en mode debug) : c'est ce qui alimente
+// l'écran de debug, jamais l'inverse. Sans Mac ni câble, c'est le seul moyen
+// de savoir qu'une erreur JS a eu lieu sur un téléphone donné.
+installerGestionnaireErreurs(() => state, persist);
+
 afficherVueActive();
 initServiceWorker();
 
 if (debugDemandeParUrl()) {
   activerConsoleDebug();
+  afficherEcranDebug();
 }

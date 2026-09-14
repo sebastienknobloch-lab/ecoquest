@@ -5,7 +5,8 @@ import {
   nombreGestesAVerifier,
 } from "../gamification.js";
 import { APP_VERSION } from "../version.js";
-import { surveillerTapsVersion } from "../debug.js";
+import { activerConsoleDebug, surveillerTapsVersion } from "../debug.js";
+import { afficherEcranDebug } from "./debug.js";
 
 export function renderProfil(container, state) {
   container.innerHTML = "";
@@ -42,12 +43,16 @@ export function renderProfil(container, state) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
-  // 5 taps rapides ici activent la console de debug embarquée (voir js/debug.js) :
-  // jamais visible autrement, jamais chargée en usage normal.
+  // 5 taps rapides ici activent la console de debug embarquée (Eruda) et
+  // l'écran de debug (erreurs JS capturées, voir js/erreurs.js) : ni l'une ni
+  // l'autre jamais visibles autrement, jamais chargées en usage normal.
   const versionEl = document.createElement("p");
   versionEl.className = "profil-version";
   versionEl.textContent = `EcoQuest v${APP_VERSION}`;
-  surveillerTapsVersion(versionEl);
+  surveillerTapsVersion(versionEl, () => {
+    activerConsoleDebug();
+    afficherEcranDebug();
+  });
 
   section.append(impactTitre, impactBloc, titre, grille, statusEl, versionEl);
   container.append(section);

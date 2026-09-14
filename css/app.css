@@ -471,6 +471,94 @@ html, body {
   background: rgba(46, 125, 50, 0.15);
 }
 
+/* Écran de debug (overlay plein écran, jamais visible en usage normal —
+   voir js/views/debug.js). Au-dessus de la tab-bar (z-index: 10). */
+.debug-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #ffffff;
+  overflow-y: auto;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+}
+
+.debug-entete {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.debug-entete h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--eco-green-dark);
+}
+
+.debug-boutons {
+  display: flex;
+  gap: 12px;
+}
+
+.debug-boutons button:last-child {
+  background: #5a5a5a;
+}
+
+.debug-vide {
+  margin-top: 24px;
+  color: #6a6a6a;
+  text-align: center;
+}
+
+.debug-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.debug-erreur {
+  background: var(--eco-bg);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.debug-erreur-meta {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  color: #6a6a6a;
+}
+
+.debug-erreur-message {
+  margin: 0 0 4px;
+  font-weight: bold;
+  word-break: break-word;
+}
+
+.debug-erreur-source {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  color: #6a6a6a;
+  word-break: break-all;
+}
+
+.debug-erreur-pile {
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 0.7rem;
+  color: #3a3a3a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* Cibles tactiles >= 44px partout où des boutons apparaissent */
 button, a.button {
   min-height: 44px;
