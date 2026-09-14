@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-14 — Correction : échec silencieux du chargement d'Eruda
+- Après le correctif du service worker, `?debug=1` restait sans effet visible pour l'utilisateur dans certains cas : `activerConsoleDebug()` (`js/debug.js`) ne tentait qu'un seul CDN (esm.sh) et avalait silencieusement toute erreur d'import — si ce CDN était bloqué ou indisponible sur le réseau de l'utilisateur, rien ne s'affichait, ni erreur ni console. Ironique pour l'outil censé justement rendre les erreurs visibles sur un téléphone sans accès à la console du navigateur.
+- `js/debug.js` : `activerConsoleDebug()` essaie désormais `esm.sh` puis, en cas d'échec, `https://cdn.jsdelivr.net/npm/eruda@3/+esm` (les deux CDN prévus par `CLAUDE.md`). Si les deux échouent, un `window.alert()` explicite prévient l'utilisateur au lieu de rester muet.
+- Vérifié avec un navigateur headless (Playwright) en local : la requête vers `esm.sh` est bien déclenchée dès que `?debug=1` est présent, puis, quand les deux CDN sont injoignables, `activerConsoleDebug()` bascule bien vers `jsdelivr` puis affiche l'alerte — comportement conforme à celui décrit ci-dessus.
+- `sw.js` : cache renommé `ecoquest-shell-v14`.
+
 ## 2026-09-14 — Correction : `?debug=1` sans effet sur un téléphone où l'app était déjà installée
 - Après le merge de la session 12, `?debug=1` ne déclenchait rien sur un téléphone où l'app était déjà installée : le nouveau service worker (cache `v12`) s'installait bien en tâche de fond, mais l'ancien service worker actif continuait de servir l'ancien `js/app.js` (sans la logique de debug) tant que la page n'était pas rechargée manuellement — exactement le même type de bug que les trois occurrences précédentes de « cache du service worker non renouvelé » listées plus bas dans ce journal, sauf que cette fois le nom de cache avait bien été changé.
 - `js/app.js` : ajout de `surveillerMiseAJourServiceWorker()`, qui recharge automatiquement la page une seule fois dès qu'un nouveau service worker prend le contrôle (`controllerchange`), au lieu de compter sur une réouverture manuelle. Corrige la classe de bug à la racine pour toutes les sessions futures, pas seulement celle-ci.
