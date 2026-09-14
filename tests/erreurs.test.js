@@ -1,0 +1,114 @@
+import assert from "node:assert/strict";
+import {
+  MAX_ERREURS_STOCKEES,
+  ajouterErreur,
+  formaterErreurWindow,
+  formaterRejetNonGere,
+  installerGestionnaireErreurs,
+} from "../js/erreurs.js";
+
+function etatVide() {
+  return { erreurs: [] };
+}
+
+// ajouterErreur : ajoute en fin de liste
+{
+  const etat = ajouterErreur(etatVide(), { message: "a" });
+  assert.deepEqual(etat.erreurs, [{ message: "a" }]);
+}
+
+// ajouterErreur : plafonne à MAX_ERREURS_STOCKEES en retirant les plus anciennes (FIFO)
+{
+  let etat = etatVide();
+  for (let i = 0; i < MAX_ERREURS_STOCKEES + 10; i++) {
+    etat = ajouterErreur(etat, { message: `erreur-${i}` });
+  }
+  assert.equal(etat.erreurs.length, MAX_ERREURS_STOCKEES);
+  // Les 10 premières (0 à 9) ont été évincées : la plus ancienne restante est erreur-10
+  assert.equal(etat.erreurs[0].message, "erreur-10");
+  assert.equal(etat.erreurs[etat.erreurs.length - 1].message, `erreur-${MAX_ERREURS_STOCKEES + 9}`);
+}
+
+// ajouterErreur : robuste si state.erreurs est absent (état ancien pas encore migré)
+{
+  const etat = ajouterErreur({}, { message: "a" });
+  assert.deepEqual(etat.erreurs, [{ message: "a" }]);
+}
+
+// formaterErreurWindow : renvoie la forme attendue, avec la pile si fournie
+{
+  const erreurObjet = new Error("boum");
+  const erreur = formaterErreurWindow("boum", "app.js", 10, 5, erreurObjet);
+  assert.equal(erreur.type, "erreur");
+  assert.equal(erreur.message, "boum");
+  assert.equal(erreur.source, "app.js");
+  assert.equal(erreur.ligne, 10);
+  assert.equal(erreur.colonne, 5);
+  assert.equal(erreur.pile, erreurObjet.stack);
+  assert.equal(typeof erreur.horodatage, "string");
+  assert.doesNotThrow(() => new Date(erreur.horodatage).toISOString());
+}
+
+// formaterErreurWindow : robuste sans objet Error (source/ligne/colonne absents)
+{
+  const erreur = formaterErreurWindow("boum", undefined, undefined, undefined, undefined);
+  assert.equal(erreur.source, null);
+  assert.equal(erreur.ligne, null);
+  assert.equal(erreur.colonne, null);
+  assert.equal(erreur.pile, null);
+}
+
+// formaterRejetNonGere : à partir d'une Error, message et pile repris
+{
+  const raison = new Error("promesse cassée");
+  const erreur = formaterRejetNonGere(raison);
+  assert.equal(erreur.type, "promesse-rejetee");
+  assert.equal(erreur.message, "promesse cassée");
+  assert.equal(erreur.pile, raison.stack);
+}
+
+// formaterRejetNonGere : robuste si la raison n'est pas une Error (ex. reject("texte"))
+{
+  const erreur = formaterRejetNonGere("texte de rejet");
+  assert.equal(erreur.message, "texte de rejet");
+  assert.equal(erreur.pile, null);
+}
+
+// installerGestionnaireErreurs : window.onerror enregistre l'erreur dans l'état persisté,
+// sans court-circuiter un gestionnaire déjà présent
+{
+  let precedentAppele = false;
+  const listenersEnregistres = {};
+  globalThis.window = {
+    onerror(message) {
+      precedentAppele = message === "boum";
+      return true;
+    },
+    addEventListener(type, callback) {
+      listenersEnregistres[type] = callback;
+    },
+  };
+  let state = etatVide();
+  const getState = () => state;
+  const persist = (nouvelEtat) => {
+    state = nouvelEtat;
+  };
+
+  installerGestionnaireErreurs(getState, persist);
+  const resultat = window.onerror("boum", "app.js", 1, 1, new Error("boum"));
+
+  assert.equal(state.erreurs.length, 1);
+  assert.equal(state.erreurs[0].message, "boum");
+  assert.equal(precedentAppele, true);
+  assert.equal(resultat, true);
+
+  // unhandledrejection : bien écouté, et enregistré dans le même état
+  listenersEnregistres.unhandledrejection({ reason: new Error("promesse cassée") });
+  assert.equal(state.erreurs.length, 2);
+  assert.equal(state.erreurs[1].type, "promesse-rejetee");
+  assert.equal(state.erreurs[1].message, "promesse cassée");
+
+  delete globalThis.window;
+}
+
+console.log("✅ tests erreurs (gestionnaire global d'erreurs JS) : OK");

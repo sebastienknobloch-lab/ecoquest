@@ -10,6 +10,7 @@ const DEFAULT_STATE = {
   activeTab: "aujourdhui",
   streak: STREAK_PAR_DEFAUT,
   joker: JOKER_PAR_DEFAUT,
+  erreurs: [],
 };
 
 // Format AAAA-MM-JJ en heure locale (pas d'UTC, pour que "minuit" corresponde

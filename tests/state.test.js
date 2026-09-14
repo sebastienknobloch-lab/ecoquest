@@ -39,6 +39,7 @@ function etatParDefautAttendu() {
     activeTab: "aujourdhui",
     streak: STREAK_PAR_DEFAUT,
     joker: JOKER_PAR_DEFAUT,
+    erreurs: [],
   };
 }
 
@@ -131,6 +132,17 @@ const { loadState, saveState, dateDuJour } = await import("../js/state.js");
   assert.equal(etat.joker.dejaUtilise, true);
 }
 
+// État ancien sans `erreurs` (avant cette version) : liste vide par défaut,
+// points et gestes intacts
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({ points: 10, gestesCochesParDate: {} }),
+  });
+  const etat = loadState();
+  assert.equal(etat.points, 10);
+  assert.deepEqual(etat.erreurs, []);
+}
+
 // saveState puis loadState : aller-retour fidèle
 {
   globalThis.localStorage = creerLocalStorageFactice();
@@ -145,6 +157,9 @@ const { loadState, saveState, dateDuJour } = await import("../js/state.js");
       jokerUtiliseDansStreak: true,
     },
     joker: { disponible: JOKERS_PAR_SEMAINE, semaine: "2026-W18", dejaUtilise: true },
+    erreurs: [
+      { type: "erreur", message: "boom", source: "app.js", ligne: 1, colonne: 2, pile: null, horodatage: "2026-05-01T10:00:00.000Z" },
+    ],
   };
   saveState(etatOriginal);
   const etatRelu = loadState();
