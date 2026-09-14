@@ -4,11 +4,30 @@ import {
   impactCumuleGrammes,
   nombreGestesAVerifier,
 } from "../gamification.js";
+import { exporterEtatJSON, importerEtatJSON } from "../state.js";
 import { APP_VERSION } from "../version.js";
 import { activerConsoleDebug, surveillerTapsVersion } from "../debug.js";
 import { afficherEcranDebug } from "./debug.js";
 
-export function renderProfil(container, state) {
+// Isolé de tout accès DOM pour rester testable avec `node --test`.
+export function nomFichierExportEtat(maintenant = new Date()) {
+  const iso = maintenant.toISOString().replace(/[:.]/g, "-");
+  return `ecoquest-sauvegarde-${iso}.json`;
+}
+
+function exporterEtat(state) {
+  const blob = new Blob([exporterEtatJSON(state)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = nomFichierExportEtat();
+  document.body.append(lien);
+  lien.click();
+  lien.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function renderProfil(container, state, persist) {
   container.innerHTML = "";
 
   const section = document.createElement("section");
@@ -43,6 +62,69 @@ export function renderProfil(container, state) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
+  // Sauvegarde manuelle : seul filet de sécurité tant que la synchronisation
+  // Supabase (phase 4) n'existe pas (un vidage du stockage détruit tout
+  // l'historique sinon). Voir js/state.js pour l'export/import et la
+  // validation.
+  const sauvegardeTitre = document.createElement("h2");
+  sauvegardeTitre.className = "section-titre";
+  sauvegardeTitre.textContent = "💾 Sauvegarde de tes données";
+
+  const sauvegardeBloc = document.createElement("div");
+  sauvegardeBloc.className = "sauvegarde-bloc";
+
+  const exporterBtn = document.createElement("button");
+  exporterBtn.type = "button";
+  exporterBtn.textContent = "Exporter mes données";
+  exporterBtn.addEventListener("click", () => exporterEtat(state));
+
+  const importerBtn = document.createElement("button");
+  importerBtn.type = "button";
+  importerBtn.className = "bouton-secondaire";
+  importerBtn.textContent = "Importer une sauvegarde";
+
+  const fichierInput = document.createElement("input");
+  fichierInput.type = "file";
+  fichierInput.accept = "application/json,.json";
+  fichierInput.hidden = true;
+
+  const sauvegardeMessage = document.createElement("p");
+  sauvegardeMessage.className = "sauvegarde-message";
+  sauvegardeMessage.hidden = true;
+
+  function afficherMessageSauvegarde(texte, estErreur) {
+    sauvegardeMessage.hidden = false;
+    sauvegardeMessage.textContent = texte;
+    sauvegardeMessage.classList.toggle("sauvegarde-message--erreur", estErreur);
+  }
+
+  importerBtn.addEventListener("click", () => fichierInput.click());
+  fichierInput.addEventListener("change", () => {
+    const fichier = fichierInput.files && fichierInput.files[0];
+    fichierInput.value = "";
+    if (!fichier) return;
+
+    fichier
+      .text()
+      .then((texte) => {
+        const resultat = importerEtatJSON(texte);
+        if (!resultat.valide) {
+          afficherMessageSauvegarde(resultat.erreur, true);
+          return;
+        }
+        // L'état existant n'est jamais écrasé avant validation complète (voir
+        // importerEtatJSON) : ici l'import est déjà confirmé valide.
+        persist(resultat.etat);
+        state = resultat.etat;
+        afficherImpact(catalogueGestes);
+        afficherBadges(catalogueGestes);
+        afficherMessageSauvegarde("Import réussi : tes données ont été restaurées.", false);
+      })
+      .catch(() => afficherMessageSauvegarde("Impossible de lire ce fichier.", true));
+  });
+
+  sauvegardeBloc.append(exporterBtn, importerBtn, fichierInput, sauvegardeMessage);
+
   // 5 taps rapides ici activent la console de debug embarquée (Eruda) et
   // l'écran de debug (erreurs JS capturées, voir js/erreurs.js) : ni l'une ni
   // l'autre jamais visibles autrement, jamais chargées en usage normal.
@@ -54,7 +136,7 @@ export function renderProfil(container, state) {
     afficherEcranDebug();
   });
 
-  section.append(impactTitre, impactBloc, titre, grille, statusEl, versionEl);
+  section.append(impactTitre, impactBloc, titre, grille, statusEl, sauvegardeTitre, sauvegardeBloc, versionEl);
   container.append(section);
 
   function afficherImpact(gestes) {
@@ -129,12 +211,17 @@ export function renderProfil(container, state) {
     });
   }
 
+  // Conservé pour pouvoir rafraîchir l'impact et les badges après un import,
+  // sans refaire une requête réseau.
+  let catalogueGestes = [];
+
   fetch("data/gestes.json")
     .then((reponse) => {
       if (!reponse.ok) throw new Error("gestes.json indisponible");
       return reponse.json();
     })
     .then((gestes) => {
+      catalogueGestes = gestes;
       afficherImpact(gestes);
       afficherBadges(gestes);
       statusEl.remove();

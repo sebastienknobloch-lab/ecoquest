@@ -1,4 +1,4 @@
-const CACHE_NAME = "ecoquest-shell-v16";
+const CACHE_NAME = "ecoquest-shell-v17";
 const APP_SHELL = [
   "./",
   "./index.html",

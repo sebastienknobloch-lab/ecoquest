@@ -83,7 +83,7 @@ Rien de visible pour l'utilisateur. Tout le reste s'appuie dessus.
 - [x] **S11** — *« Crée `.github/workflows/tests.yml` : à chaque push sur `main` et sur chaque PR, exécuter `node --test tests/*.test.js`. Aucune dépendance npm. »*
 - [x] **S12** — *« Ajoute une console de debug embarquée (Eruda, importée depuis un CDN) activée uniquement par le paramètre d'URL `?debug=1` ou 5 taps sur le numéro de version. Jamais chargée en usage normal. »* Sans Mac, c'est le seul moyen de voir ce qui se passe dans une WebView.
 - [x] **S13** — *« Ajoute un gestionnaire global d'erreurs JS (`window.onerror` + `unhandledrejection`) qui stocke les 50 dernières erreurs dans l'état, consultables et exportables depuis l'écran de debug. »*
-- [ ] **S14** — *« Ajoute dans `js/state.js` un export complet de l'état en JSON et un import avec validation, exposés sur l'écran Profil. L'import refuse un fichier invalide sans écraser l'état existant. Tests inclus. »*
+- [x] **S14** — *« Ajoute dans `js/state.js` un export complet de l'état en JSON et un import avec validation, exposés sur l'écran Profil. L'import refuse un fichier invalide sans écraser l'état existant. Tests inclus. »*
 - [ ] **S15** — *« Vérifie un par un les gestes de `data/gestes.json` marqués `a_verifier: true` contre les ordres de grandeur ADEME / Impact CO2. Corrige valeur et source, ou retire le geste. Dis-moi lesquels tu as retirés. »*
 - [ ] **S16** — *« Même travail pour `EQUIVALENCES_IMPACT` dans `js/gamification.js` : source précise pour chaque facteur, ou retrait de l'équivalence. »*
 - [ ] **S17** — *« Écris README.md pour un visiteur extérieur : promesse, capture, stack, comment lancer les tests, licence. Ajoute LICENSE (MIT). »*
