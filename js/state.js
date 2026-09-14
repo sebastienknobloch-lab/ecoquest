@@ -73,3 +73,110 @@ export function saveState(state) {
     // stockage indisponible (navigation privée, quota dépassé…) : on continue sans persister
   }
 }
+
+// --- Export / import de l'état (sauvegarde manuelle) ---
+//
+// Un vidage du stockage du navigateur détruit tout l'historique de
+// l'utilisateur (voir CLAUDE.md, dette connue) : l'export/import manuel est
+// le seul filet de sécurité tant que la synchronisation Supabase (phase 4)
+// n'existe pas.
+//
+// Format d'export : une enveloppe { format, version, exporteLe, etat } plutôt
+// que l'état brut, pour distinguer un fichier EcoQuest d'un JSON quelconque à
+// l'import et pouvoir faire évoluer le format plus tard sans casser les
+// anciens exports.
+
+const EXPORT_FORMAT = "ecoquest-export";
+const EXPORT_VERSION = 1;
+
+export function exporterEtatJSON(state) {
+  return JSON.stringify(
+    { format: EXPORT_FORMAT, version: EXPORT_VERSION, exporteLe: new Date().toISOString(), etat: state },
+    null,
+    2
+  );
+}
+
+function estObjetSimple(valeur) {
+  return typeof valeur === "object" && valeur !== null && !Array.isArray(valeur);
+}
+
+function estTableauDeChaines(valeur) {
+  return Array.isArray(valeur) && valeur.every((v) => typeof v === "string");
+}
+
+function estGestesCochesParDateValide(valeur) {
+  return (
+    estObjetSimple(valeur) &&
+    Object.entries(valeur).every(([cle, val]) => /^\d{4}-\d{2}-\d{2}$/.test(cle) && estTableauDeChaines(val))
+  );
+}
+
+function estStreakValide(valeur) {
+  return (
+    estObjetSimple(valeur) &&
+    typeof valeur.actuel === "number" &&
+    (valeur.dernierJourValide === null || typeof valeur.dernierJourValide === "string") &&
+    typeof valeur.dernierJourViaJoker === "boolean" &&
+    typeof valeur.jokerUtiliseDansStreak === "boolean"
+  );
+}
+
+function estJokerValide(valeur) {
+  return (
+    estObjetSimple(valeur) &&
+    typeof valeur.disponible === "number" &&
+    (valeur.semaine === null || typeof valeur.semaine === "string") &&
+    typeof valeur.dejaUtilise === "boolean"
+  );
+}
+
+// Valide la structure minimale attendue d'un état EcoQuest (sans dépendre du
+// catalogue de gestes, indisponible à l'import). Volontairement stricte sur
+// les types pour ne jamais laisser une donnée corrompue écraser l'état actuel.
+export function validerEtat(etat) {
+  return (
+    estObjetSimple(etat) &&
+    typeof etat.points === "number" &&
+    Number.isFinite(etat.points) &&
+    etat.points >= 0 &&
+    estGestesCochesParDateValide(etat.gestesCochesParDate) &&
+    typeof etat.activeTab === "string" &&
+    estStreakValide(etat.streak) &&
+    estJokerValide(etat.joker) &&
+    (etat.erreurs === undefined || Array.isArray(etat.erreurs))
+  );
+}
+
+// Parse et valide un export JSON. Ne lève jamais d'exception : renvoie
+// { valide: false, erreur } pour tout fichier invalide, sans qu'aucun état ne
+// doive être appliqué par l'appelant (l'état existant reste intact).
+export function importerEtatJSON(texte) {
+  let payload;
+  try {
+    payload = JSON.parse(texte);
+  } catch {
+    return { valide: false, erreur: "Ce fichier n'est pas un JSON valide." };
+  }
+
+  if (!estObjetSimple(payload)) {
+    return { valide: false, erreur: "Format de fichier inattendu." };
+  }
+
+  const etatBrut = payload.format === EXPORT_FORMAT && estObjetSimple(payload.etat) ? payload.etat : payload;
+
+  if (!validerEtat(etatBrut)) {
+    return { valide: false, erreur: "Fichier invalide : ce n'est pas une sauvegarde EcoQuest reconnue." };
+  }
+
+  const etat = {
+    ...DEFAULT_STATE,
+    ...etatBrut,
+    gestesCochesParDate: { ...etatBrut.gestesCochesParDate },
+    streak: { ...STREAK_PAR_DEFAUT, ...etatBrut.streak },
+    joker: { ...JOKER_PAR_DEFAUT, ...etatBrut.joker },
+    erreurs: Array.isArray(etatBrut.erreurs) ? etatBrut.erreurs : [],
+  };
+
+  return { valide: true, etat };
+}

@@ -400,6 +400,27 @@ html, body {
   border: 2px solid var(--eco-green);
 }
 
+.sauvegarde-bloc {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sauvegarde-bloc .bouton-secondaire {
+  background: #5a5a5a;
+}
+
+.sauvegarde-message {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--eco-green-dark);
+}
+
+.sauvegarde-message--erreur {
+  color: #b3261e;
+}
+
 .profil-version {
   margin: 24px 0 0;
   padding: 12px 0;
