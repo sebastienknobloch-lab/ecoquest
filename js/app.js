@@ -71,6 +71,21 @@ function surveillerMiseAJourServiceWorker() {
   });
 }
 
+// Une PWA installée est le plus souvent *reprise* depuis l'arrière-plan (l'OS
+// garde le processus en mémoire) plutôt que rechargée à chaque ouverture : dans
+// ce cas, l'événement "load" ne se redéclenche jamais, donc le navigateur ne
+// revérifie jamais spontanément si sw.js a changé. Sans ceci, une PWA installée
+// peut rester bloquée indéfiniment sur une ancienne version tant qu'elle n'est
+// pas explicitement fermée puis rouverte — contrairement à un onglet de
+// navigateur classique, toujours rechargé au prochain accès.
+function verifierMiseAJourAuRetourPremierPlan(registration) {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      registration.update().catch(() => {});
+    }
+  });
+}
+
 function initServiceWorker() {
   if (!("serviceWorker" in navigator)) {
     setStatus(isInstalled() ? "Application installée ✅" : "Prête");
@@ -80,13 +95,14 @@ function initServiceWorker() {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("./sw.js")
-      .then(() =>
+      .then((registration) => {
+        verifierMiseAJourAuRetourPremierPlan(registration);
         setStatus(
           isInstalled()
             ? "Application installée ✅"
             : "Prête, installe-moi sur ton téléphone 📲"
-        )
-      )
+        );
+      })
       .catch(() => setStatus("Prête (hors-ligne indisponible)"));
   });
 }
