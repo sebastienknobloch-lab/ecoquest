@@ -3,6 +3,7 @@ import { renderAujourdhui } from "./views/aujourdhui.js";
 import { renderDefis } from "./views/defis.js";
 import { renderFoyer } from "./views/foyer.js";
 import { renderProfil } from "./views/profil.js";
+import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 
 const VUES = {
   aujourdhui: renderAujourdhui,
@@ -78,3 +79,7 @@ function initServiceWorker() {
 
 afficherVueActive();
 initServiceWorker();
+
+if (debugDemandeParUrl()) {
+  activerConsoleDebug();
+}

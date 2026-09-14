@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-14 — Session 12 : Console de debug embarquée (Eruda)
+- Sans Mac ni câble USB, il n'y avait aucun moyen de voir ce qui se passe réellement dans la WebView Android une fois l'app empaquetée — dette listée dans `ROADMAP.md` (S12).
+- Ajout de `js/debug.js` : `activerConsoleDebug()` charge [Eruda](https://eruda.liriliri.io/) via `import()` dynamique depuis `https://esm.sh/eruda@3` (aucune dépendance ajoutée au repo, conforme à la contrainte zéro build) puis appelle `eruda.init()`. Si le CDN est injoignable (hors-ligne), l'échec est silencieux et n'empêche jamais l'app de fonctionner normalement.
+- Deux déclencheurs, jamais actifs par défaut : le paramètre d'URL `?debug=1` (`debugDemandeParUrl()`, vérifié une fois au démarrage dans `js/app.js`), ou 5 taps rapprochés (moins de 2 s entre chaque) sur le numéro de version affiché en bas de l'écran Profil. La logique de comptage des taps (`creerCompteurTaps()`) est isolée de tout accès DOM pour rester testable.
+- Ajout de `js/version.js` (`APP_VERSION`, constante à faire évoluer manuellement) et d'un nouveau footer discret sur l'écran Profil (`js/views/profil.js`, classe `.profil-version` dans `css/app.css`) affichant « EcoQuest v1.0.0 ». C'est la première fois qu'un numéro de version est visible dans l'app.
+- Ajout de `tests/debug.test.js` : `debugActiveDepuisRecherche()` (seul `?debug=1` active, tout le reste n'active rien) et `creerCompteurTaps()` (5 taps rapprochés déclenchent une seule fois, réarmement après une pause trop longue ou après un déclenchement, seuil/délai personnalisables).
+- `sw.js` : `js/debug.js` et `js/version.js` ajoutés à l'app shell mis en cache ; cache renommé `ecoquest-shell-v12` pour forcer la mise à jour sur les téléphones déjà installés.
+- `ROADMAP.md` : case **S12** cochée.
+
 ## 2026-09-13 — Correction : la liste des catégories du catalogue n'était plus dérivée des données
 - La liste des 5 catégories existait en trois exemplaires : la constante `CATEGORIES` de `js/views/aujourdhui.js`, les données de `data/gestes.json`, et `CATEGORIES_VALIDES` dans `tests/points.test.js`. `afficherCatalogueComplet()` itérait sur la constante de la vue : une catégorie présente dans les données mais absente de cette liste aurait disparu silencieusement du catalogue complet, alors que `selectionDuJour()` l'aurait quand même proposée dans les 3 gestes du jour.
 - `js/views/aujourdhui.js` : `afficherCatalogueComplet()` construit désormais la liste des catégories à afficher directement à partir des gestes chargés (ordre de première apparition), au lieu d'une liste figée côté vue. La constante devient `LIBELLES_CATEGORIES` (exportée), une simple table d'étiquettes lisibles (emoji + libellé) utilisée via `libelleCategorie()`, avec repli sur l'identifiant brut si une catégorie inconnue apparaît dans les données.

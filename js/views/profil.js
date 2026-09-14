@@ -4,6 +4,8 @@ import {
   impactCumuleGrammes,
   nombreGestesAVerifier,
 } from "../gamification.js";
+import { APP_VERSION } from "../version.js";
+import { surveillerTapsVersion } from "../debug.js";
 
 export function renderProfil(container, state) {
   container.innerHTML = "";
@@ -40,7 +42,14 @@ export function renderProfil(container, state) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
-  section.append(impactTitre, impactBloc, titre, grille, statusEl);
+  // 5 taps rapides ici activent la console de debug embarquée (voir js/debug.js) :
+  // jamais visible autrement, jamais chargée en usage normal.
+  const versionEl = document.createElement("p");
+  versionEl.className = "profil-version";
+  versionEl.textContent = `EcoQuest v${APP_VERSION}`;
+  surveillerTapsVersion(versionEl);
+
+  section.append(impactTitre, impactBloc, titre, grille, statusEl, versionEl);
   container.append(section);
 
   function afficherImpact(gestes) {
