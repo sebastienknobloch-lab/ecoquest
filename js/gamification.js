@@ -332,21 +332,16 @@ export const EQUIVALENCES_IMPACT = [
     icone: "🚗",
     unite: "km en voiture évités",
     grammesParUnite: 193,
-    source: "Impact CO2 (ADEME), voiture particulière moyenne (estimation)",
-  },
-  {
-    id: "smartphone",
-    icone: "🔋",
-    unite: "charges de smartphone évitées",
-    grammesParUnite: 8,
-    source: "Impact CO2 (ADEME), recharge d'un smartphone (estimation)",
+    source:
+      "ADEME, Base Carbone — voiture particulière, moyenne nationale toutes distances et toutes carburations (carburant : amont + combustion, hors fabrication du véhicule) (estimation)",
   },
   {
     id: "douche",
     icone: "🚿",
     unite: "douches courtes évitées",
     grammesParUnite: 300,
-    source: "ADEME, \"Réduire sa consommation d'eau chaude sanitaire\" (estimation)",
+    source:
+      "ADEME, \"Nos conseils pour économiser l'eau à la maison\" — 58 kWh/m³ pour chauffer l'eau de 10 à 60°C (estimation, hypothèse chauffage électrique)",
   },
 ];
 

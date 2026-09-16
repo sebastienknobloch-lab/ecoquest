@@ -15,7 +15,7 @@
     "difficulte": 1,
     "points": 10,
     "co2_evite_g": 300,
-    "source": "ADEME, \"Réduire sa consommation d'eau chaude sanitaire\" (estimation)"
+    "source": "ADEME, \"Nos conseils pour économiser l'eau à la maison\" — 58 kWh/m³ pour chauffer l'eau de 10 à 60°C (estimation, hypothèse chauffage électrique)"
   },
   {
     "id": "debrancher-veille",
