@@ -349,6 +349,86 @@ html, body {
   line-height: 1.3;
 }
 
+.historique-bloc {
+  margin: 0 0 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  padding: 16px;
+}
+
+.historique-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.historique-nav {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  background: rgba(46, 125, 50, 0.12);
+  color: var(--eco-green-dark);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.historique-nav:disabled {
+  opacity: 0.4;
+}
+
+.historique-mois {
+  margin: 0;
+  font-weight: bold;
+  color: var(--eco-green-dark);
+  text-transform: capitalize;
+}
+
+.historique-semaine {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.historique-semaine span {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #6a6a6a;
+}
+
+.historique-grille {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.historique-jour {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: #eceae4;
+  color: #5a5a5a;
+}
+
+.historique-jour--vide {
+  background: none;
+}
+
+.historique-jour--actif {
+  background: var(--eco-green);
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.historique-jour--aujourdhui {
+  box-shadow: inset 0 0 0 2px var(--eco-green-dark);
+}
+
 .badges-grille {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

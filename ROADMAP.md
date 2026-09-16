@@ -88,7 +88,7 @@ Rien de visible pour l'utilisateur. Tout le reste s'appuie dessus.
 - [x] **S16** — *« Même travail pour `EQUIVALENCES_IMPACT` dans `js/gamification.js` : source précise pour chaque facteur, ou retrait de l'équivalence. »*
 - [x] **S17** — *« Écris README.md pour un visiteur extérieur : promesse, capture, stack, comment lancer les tests, licence. Ajoute LICENSE (MIT). »*
 - [x] **S18** — *« Onboarding en 3 écrans : prénom, 3 catégories prioritaires, heure de rappel souhaitée. Les gestes du jour tiennent compte des priorités. L'heure est stockée, pas encore utilisée. »*
-- [ ] **S19** — *« Historique : calendrier du mois avec les jours actifs colorés, sur l'écran Profil. »*
+- [x] **S19** — *« Historique : calendrier du mois avec les jours actifs colorés, sur l'écran Profil. »*
 - [ ] **S20** — *« Rédige `privacy.html` : politique de confidentialité exigée par le Play Store, à l'état actuel de l'app (données locales uniquement, aucune collecte). À faire évoluer en phase 4 et en S65. »*
 
 ### Phase 2 — Coquille Android (S21–S28)

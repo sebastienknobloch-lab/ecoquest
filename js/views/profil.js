@@ -1,10 +1,12 @@
 import {
   calculerBadges,
   calculerEquivalences,
+  calendrierMois,
   impactCumuleGrammes,
+  moisAdjacent,
   nombreGestesAVerifier,
 } from "../gamification.js";
-import { exporterEtatJSON, importerEtatJSON } from "../state.js";
+import { dateDuJour, exporterEtatJSON, importerEtatJSON } from "../state.js";
 import { APP_VERSION } from "../version.js";
 import { activerConsoleDebug, surveillerTapsVersion } from "../debug.js";
 import { afficherEcranDebug } from "./debug.js";
@@ -50,6 +52,98 @@ export function renderProfil(container, state, persist) {
   impactListe.className = "impact-liste";
 
   impactBloc.append(impactTotal, impactAVerifier, impactListe);
+
+  const historiqueTitre = document.createElement("h2");
+  historiqueTitre.className = "section-titre";
+  historiqueTitre.textContent = "🗓️ Ton historique";
+
+  const historiqueBloc = document.createElement("div");
+  historiqueBloc.className = "historique-bloc";
+
+  const historiqueEntete = document.createElement("div");
+  historiqueEntete.className = "historique-entete";
+
+  const moisPrecedentBtn = document.createElement("button");
+  moisPrecedentBtn.type = "button";
+  moisPrecedentBtn.className = "historique-nav";
+  moisPrecedentBtn.setAttribute("aria-label", "Mois précédent");
+  moisPrecedentBtn.textContent = "‹";
+
+  const moisLabel = document.createElement("p");
+  moisLabel.className = "historique-mois";
+
+  const moisSuivantBtn = document.createElement("button");
+  moisSuivantBtn.type = "button";
+  moisSuivantBtn.className = "historique-nav";
+  moisSuivantBtn.setAttribute("aria-label", "Mois suivant");
+  moisSuivantBtn.textContent = "›";
+
+  historiqueEntete.append(moisPrecedentBtn, moisLabel, moisSuivantBtn);
+
+  const historiqueSemaine = document.createElement("div");
+  historiqueSemaine.className = "historique-semaine";
+  ["L", "M", "M", "J", "V", "S", "D"].forEach((label) => {
+    const jourLabel = document.createElement("span");
+    jourLabel.textContent = label;
+    historiqueSemaine.append(jourLabel);
+  });
+
+  const historiqueGrille = document.createElement("div");
+  historiqueGrille.className = "historique-grille";
+
+  historiqueBloc.append(historiqueEntete, historiqueSemaine, historiqueGrille);
+
+  // Mois affiché par le calendrier (AAAA-MM-JJ, seuls année/mois comptent) :
+  // état purement local à l'écran, jamais persisté dans `state`.
+  let moisAffiche = dateDuJour();
+
+  function afficherHistorique() {
+    const calendrier = calendrierMois(state, moisAffiche);
+    moisLabel.textContent = new Date(calendrier.annee, calendrier.mois - 1, 1).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    // Jamais de navigation vers un mois futur : rien à y afficher.
+    moisSuivantBtn.disabled = moisAffiche.slice(0, 7) >= dateDuJour().slice(0, 7);
+
+    historiqueGrille.innerHTML = "";
+    for (let i = 0; i < calendrier.decalageDebut; i++) {
+      const case_ = document.createElement("span");
+      case_.className = "historique-jour historique-jour--vide";
+      case_.setAttribute("aria-hidden", "true");
+      historiqueGrille.append(case_);
+    }
+
+    const aujourdhui = dateDuJour();
+    calendrier.jours.forEach((jourInfo) => {
+      const case_ = document.createElement("span");
+      case_.className = [
+        "historique-jour",
+        jourInfo.actif ? "historique-jour--actif" : "",
+        jourInfo.date === aujourdhui ? "historique-jour--aujourdhui" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      case_.textContent = String(jourInfo.jour);
+      const descriptionGestes =
+        jourInfo.nbGestes > 0
+          ? `${jourInfo.nbGestes} geste${jourInfo.nbGestes > 1 ? "s" : ""} validé${jourInfo.nbGestes > 1 ? "s" : ""}`
+          : "aucun geste validé";
+      case_.setAttribute("aria-label", `${jourInfo.jour} ${moisLabel.textContent} : ${descriptionGestes}`);
+      historiqueGrille.append(case_);
+    });
+  }
+
+  moisPrecedentBtn.addEventListener("click", () => {
+    moisAffiche = moisAdjacent(moisAffiche, -1);
+    afficherHistorique();
+  });
+  moisSuivantBtn.addEventListener("click", () => {
+    if (moisSuivantBtn.disabled) return;
+    moisAffiche = moisAdjacent(moisAffiche, 1);
+    afficherHistorique();
+  });
 
   const titre = document.createElement("h2");
   titre.className = "section-titre";
@@ -118,6 +212,7 @@ export function renderProfil(container, state, persist) {
         state = resultat.etat;
         afficherImpact(catalogueGestes);
         afficherBadges(catalogueGestes);
+        afficherHistorique();
         afficherMessageSauvegarde("Import réussi : tes données ont été restaurées.", false);
       })
       .catch(() => afficherMessageSauvegarde("Impossible de lire ce fichier.", true));
@@ -136,8 +231,21 @@ export function renderProfil(container, state, persist) {
     afficherEcranDebug();
   });
 
-  section.append(impactTitre, impactBloc, titre, grille, statusEl, sauvegardeTitre, sauvegardeBloc, versionEl);
+  section.append(
+    impactTitre,
+    impactBloc,
+    historiqueTitre,
+    historiqueBloc,
+    titre,
+    grille,
+    statusEl,
+    sauvegardeTitre,
+    sauvegardeBloc,
+    versionEl
+  );
   container.append(section);
+
+  afficherHistorique();
 
   function afficherImpact(gestes) {
     const totalGrammes = impactCumuleGrammes(state, gestes);

@@ -394,3 +394,38 @@ export function calculerEquivalences(state, gestes) {
     valeur: Math.round(totalGrammes / equivalence.grammesParUnite),
   }));
 }
+
+// --- Historique : calendrier du mois ---
+//
+// Jamais stocké dans l'état : reconstruit à la volée depuis
+// `gestesCochesParDate` pour un mois donné, comme le reste du dérivé
+// (niveau, badges, impact) ci-dessus.
+
+// `dateReference` (AAAA-MM-JJ) désigne le mois affiché, à la charge de
+// l'appelant (pas de dépendance à "aujourd'hui" ici, pour rester pur et testable).
+export function calendrierMois(state, dateReference) {
+  const [anneeStr, moisStr] = dateReference.split("-");
+  const annee = Number(anneeStr);
+  const mois = Number(moisStr); // 1-12
+  const nbJours = new Date(annee, mois, 0).getDate();
+  const premierJourSemaine = new Date(annee, mois - 1, 1).getDay(); // 0 = dimanche
+  const decalageDebut = (premierJourSemaine + 6) % 7; // lundi = 0 ... dimanche = 6
+
+  const jours = [];
+  for (let jour = 1; jour <= nbJours; jour++) {
+    const date = `${anneeStr}-${moisStr}-${String(jour).padStart(2, "0")}`;
+    const nbGestes = (state.gestesCochesParDate?.[date] || []).length;
+    jours.push({ date, jour, nbGestes, actif: nbGestes > 0 });
+  }
+
+  return { annee, mois, decalageDebut, jours };
+}
+
+// Premier jour du mois précédent/suivant celui de `dateReference`, au format
+// AAAA-MM-JJ, pour naviguer le calendrier sans jamais sortir de la plage valide.
+export function moisAdjacent(dateReference, delta) {
+  const [anneeStr, moisStr] = dateReference.split("-");
+  const d = new Date(Number(anneeStr), Number(moisStr) - 1 + delta, 1);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-01`;
+}
