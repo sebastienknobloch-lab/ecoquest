@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-16 — Session 19 : Historique — calendrier du mois sur l'écran Profil
+- `js/gamification.js` : nouvelles fonctions pures `calendrierMois(state, dateReference)` (jours du mois désigné par `dateReference`, avec `nbGestes`/`actif` reconstruits à la volée depuis `gestesCochesParDate`, jamais stockés — même règle que niveau/badges/impact) et `moisAdjacent(dateReference, delta)` (mois précédent/suivant, toujours ramené au 1er du mois).
+- `js/views/profil.js` : nouvelle section "🗓️ Ton historique" entre l'impact cumulé et les badges — grille 7 colonnes (L à D), jours actifs colorés en vert, jour courant entouré, boutons précédent/suivant (44 px, `aria-label`), navigation bloquée au-delà du mois courant (rien à afficher dans le futur). Chaque case porte un `aria-label` explicite (ex. "12 septembre 2026 : 2 gestes validés"). Le mois affiché est un état local à l'écran (pas persisté dans `state`) ; rafraîchi après un import de sauvegarde comme l'impact et les badges.
+- `css/app.css` : styles `.historique-*`, mêmes codes visuels que les blocs existants (carte blanche, ombre légère, vert `--eco-green` pour l'actif).
+- Tests : `tests/historique.test.js` — décalage du 1er jour de la semaine, comptage par jour, mois hors plage non affiché, année bissextile, `moisAdjacent` aux bornes année/mois, dérivé jamais stocké dans l'état.
+- `sw.js` : cache renommé `ecoquest-shell-v21` (`js/gamification.js` et `js/views/profil.js` font partie de l'app shell précaché).
+- Vérifié avec Playwright (Chromium, 390×844) : calendrier affiché sur l'écran Profil avec jours actifs colorés et jour courant repéré, navigation mois précédent/suivant fonctionnelle, bouton "suivant" désactivé une fois revenu au mois courant.
+
 ## 2026-09-16 — Session 18 : Onboarding en 3 écrans
 - `js/state.js` : nouveau `state.onboarding = { termine, prenom, categoriesPrioritaires, heureRappel }` (défaut `ONBOARDING_PAR_DEFAUT`, `heureRappel` par défaut "19:00"), avec migration douce comme pour `streak`/`joker`/`erreurs`. Un état déjà en cours d'usage (`points > 0`) sans `onboarding` est marqué `termine: true` pour ne pas ré-afficher l'onboarding à un utilisateur existant. `validerEtat`/`importerEtatJSON` acceptent son absence (anciens exports) et rejettent une structure incomplète.
 - Nouvel écran `js/views/onboarding.js` : 3 étapes (prénom → 3 catégories prioritaires parmi les 5 du catalogue → heure de rappel souhaitée), navigable en avant/arrière, bouton "Suivant"/"Terminer" désactivé tant que l'étape n'est pas valide (prénom non vide, exactement 3 catégories). L'heure de rappel est un `<input type="time">` : stockée, mais aucune notification n'est encore programmée (session 29).
