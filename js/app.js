@@ -3,6 +3,7 @@ import { renderAujourdhui } from "./views/aujourdhui.js";
 import { renderDefis } from "./views/defis.js";
 import { renderFoyer } from "./views/foyer.js";
 import { renderProfil } from "./views/profil.js";
+import { renderOnboarding } from "./views/onboarding.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
 import { installerGestionnaireErreurs } from "./erreurs.js";
@@ -50,6 +51,27 @@ function afficherVueActive() {
   const vue = VUES[state.activeTab] || VUES.aujourdhui;
   vue(viewRoot, state, persist);
   mettreAJourOngletActif();
+}
+
+// L'onboarding n'apparaît qu'une fois, avant la navigation à onglets : la
+// tab-bar reste masquée tant qu'il n'est pas terminé (voir state.onboarding,
+// migration douce dans js/state.js pour les utilisateurs déjà en cours d'usage).
+function afficherApp() {
+  if (tabBar) tabBar.hidden = false;
+  afficherVueActive();
+}
+
+function demarrer() {
+  if (!viewRoot) return;
+  if (!state.onboarding?.termine) {
+    if (tabBar) tabBar.hidden = true;
+    renderOnboarding(viewRoot, state, (nouvelEtat) => {
+      persist(nouvelEtat);
+      afficherApp();
+    });
+    return;
+  }
+  afficherApp();
 }
 
 tabButtons.forEach((btn) => {
@@ -114,7 +136,7 @@ function initServiceWorker() {
 // de savoir qu'une erreur JS a eu lieu sur un téléphone donné.
 installerGestionnaireErreurs(() => state, persist);
 
-afficherVueActive();
+demarrer();
 initServiceWorker();
 
 if (debugDemandeParUrl()) {

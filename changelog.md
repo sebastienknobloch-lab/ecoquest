@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 — Session 18 : Onboarding en 3 écrans
+- `js/state.js` : nouveau `state.onboarding = { termine, prenom, categoriesPrioritaires, heureRappel }` (défaut `ONBOARDING_PAR_DEFAUT`, `heureRappel` par défaut "19:00"), avec migration douce comme pour `streak`/`joker`/`erreurs`. Un état déjà en cours d'usage (`points > 0`) sans `onboarding` est marqué `termine: true` pour ne pas ré-afficher l'onboarding à un utilisateur existant. `validerEtat`/`importerEtatJSON` acceptent son absence (anciens exports) et rejettent une structure incomplète.
+- Nouvel écran `js/views/onboarding.js` : 3 étapes (prénom → 3 catégories prioritaires parmi les 5 du catalogue → heure de rappel souhaitée), navigable en avant/arrière, bouton "Suivant"/"Terminer" désactivé tant que l'étape n'est pas valide (prénom non vide, exactement 3 catégories). L'heure de rappel est un `<input type="time">` : stockée, mais aucune notification n'est encore programmée (session 29).
+- `js/app.js` : l'onboarding s'affiche une seule fois, avant la navigation à onglets, tant que `state.onboarding.termine` est faux ; la tab-bar reste masquée pendant.
+- `css/app.css` : ajout de `.tab-bar[hidden] { display: none }` — sans cette règle, le `display: flex` de `.tab-bar` l'emportait sur l'attribut natif `hidden` posé par `js/app.js` et la navigation restait visible pendant l'onboarding (repéré en testant le flux avec Playwright).
+- `js/gamification.js` : `selectionDuJour(gestes, dateISO, categoriesPrioritaires)` accepte un 3ᵉ paramètre optionnel. Si l'utilisateur a choisi exactement 3 catégories valides à l'onboarding, les gestes du jour viennent de ces 3 catégories (un geste tiré au sort par catégorie, toujours déterministe par date) ; sinon, comportement inchangé (tirage aléatoire sur les 5 catégories). `js/views/aujourdhui.js` passe `state.onboarding.categoriesPrioritaires`.
+- Tests : migrations et validation de `onboarding` dans `tests/state.test.js` et `tests/state-export-import.test.js` ; effet des catégories prioritaires (et repli sur l'aléatoire si absentes/invalides) dans `tests/selection.test.js`.
+- `sw.js` : ajout de `js/views/onboarding.js` à l'app shell précaché, cache renommé `ecoquest-shell-v20`.
+- Vérifié avec Playwright (Chromium, 390×844) : les 3 écrans s'enchaînent, l'état est bien persisté dans `localStorage`, et les gestes du jour affichés après l'onboarding viennent bien des 3 catégories choisies.
+
 ## 2026-09-16 — Session 17 : README.md et licence MIT
 - Dette listée dans `CLAUDE.md` : dépôt sans README, sans description, sans licence.
 - Ajout de `README.md` pour un visiteur extérieur : promesse du produit, capture d'écran, tableau de stack, comment lancer l'app en local et les tests, licence.

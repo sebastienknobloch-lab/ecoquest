@@ -2,6 +2,15 @@ import { STREAK_PAR_DEFAUT, JOKER_PAR_DEFAUT, JOKERS_PAR_SEMAINE } from "./gamif
 
 const STORAGE_KEY = "ecoquest-v1";
 
+// heureRappel : stockée dès l'onboarding (session 18), pas encore utilisée —
+// la programmation du rappel local arrive en session 29.
+export const ONBOARDING_PAR_DEFAUT = {
+  termine: false,
+  prenom: "",
+  categoriesPrioritaires: [],
+  heureRappel: "19:00",
+};
+
 // Toute nouvelle propriété doit avoir une valeur par défaut ici
 // (migration douce : les données existantes ne sont jamais perdues).
 const DEFAULT_STATE = {
@@ -11,6 +20,7 @@ const DEFAULT_STATE = {
   streak: STREAK_PAR_DEFAUT,
   joker: JOKER_PAR_DEFAUT,
   erreurs: [],
+  onboarding: ONBOARDING_PAR_DEFAUT,
 };
 
 // Format AAAA-MM-JJ en heure locale (pas d'UTC, pour que "minuit" corresponde
@@ -58,6 +68,15 @@ export function loadState() {
     // "Joker utilisé" un état déjà en cours d'utilisation.
     if (!state.joker.dejaUtilise && state.joker.disponible < JOKERS_PAR_SEMAINE) {
       state.joker.dejaUtilise = true;
+    }
+
+    // Migration douce : l'onboarding n'existait pas avant cette version. Un
+    // état déjà en cours d'usage (points > 0) a forcément passé un onboarding
+    // qui n'existait pas encore : on le marque terminé pour ne pas le
+    // ré-afficher à un utilisateur existant.
+    state.onboarding = { ...ONBOARDING_PAR_DEFAUT, ...(parsed.onboarding || {}) };
+    if (!parsed.onboarding && state.points > 0) {
+      state.onboarding.termine = true;
     }
 
     return state;
@@ -131,6 +150,16 @@ function estJokerValide(valeur) {
   );
 }
 
+function estOnboardingValide(valeur) {
+  return (
+    estObjetSimple(valeur) &&
+    typeof valeur.termine === "boolean" &&
+    typeof valeur.prenom === "string" &&
+    estTableauDeChaines(valeur.categoriesPrioritaires) &&
+    typeof valeur.heureRappel === "string"
+  );
+}
+
 // Valide la structure minimale attendue d'un état EcoQuest (sans dépendre du
 // catalogue de gestes, indisponible à l'import). Volontairement stricte sur
 // les types pour ne jamais laisser une donnée corrompue écraser l'état actuel.
@@ -144,7 +173,8 @@ export function validerEtat(etat) {
     typeof etat.activeTab === "string" &&
     estStreakValide(etat.streak) &&
     estJokerValide(etat.joker) &&
-    (etat.erreurs === undefined || Array.isArray(etat.erreurs))
+    (etat.erreurs === undefined || Array.isArray(etat.erreurs)) &&
+    (etat.onboarding === undefined || estOnboardingValide(etat.onboarding))
   );
 }
 
@@ -176,6 +206,7 @@ export function importerEtatJSON(texte) {
     streak: { ...STREAK_PAR_DEFAUT, ...etatBrut.streak },
     joker: { ...JOKER_PAR_DEFAUT, ...etatBrut.joker },
     erreurs: Array.isArray(etatBrut.erreurs) ? etatBrut.erreurs : [],
+    onboarding: { ...ONBOARDING_PAR_DEFAUT, ...etatBrut.onboarding },
   };
 
   return { valide: true, etat };

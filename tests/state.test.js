@@ -40,13 +40,14 @@ function etatParDefautAttendu() {
     streak: STREAK_PAR_DEFAUT,
     joker: JOKER_PAR_DEFAUT,
     erreurs: [],
+    onboarding: ONBOARDING_PAR_DEFAUT,
   };
 }
 
 // Faux localStorage installé sur globalThis avant d'importer js/state.js.
 globalThis.localStorage = creerLocalStorageFactice();
 
-const { loadState, saveState, dateDuJour } = await import("../js/state.js");
+const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT } = await import("../js/state.js");
 
 // Stockage vide → état par défaut complet
 {
@@ -160,10 +161,50 @@ const { loadState, saveState, dateDuJour } = await import("../js/state.js");
     erreurs: [
       { type: "erreur", message: "boom", source: "app.js", ligne: 1, colonne: 2, pile: null, horodatage: "2026-05-01T10:00:00.000Z" },
     ],
+    onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "20:30" },
   };
   saveState(etatOriginal);
   const etatRelu = loadState();
   assert.deepEqual(etatRelu, etatOriginal);
+}
+
+// État ancien sans `onboarding` et sans geste validé (première ouverture jamais
+// terminée) : valeurs par défaut, onboarding pas marqué terminé
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({ points: 0, gestesCochesParDate: {} }),
+  });
+  const etat = loadState();
+  assert.deepEqual(etat.onboarding, ONBOARDING_PAR_DEFAUT);
+}
+
+// État ancien avec des points déjà gagnés (avant l'existence de l'onboarding) :
+// onboarding marqué terminé pour ne pas l'afficher à un utilisateur existant
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({ points: 30, gestesCochesParDate: { "2026-01-01": ["geste-a"] } }),
+  });
+  const etat = loadState();
+  assert.equal(etat.onboarding.termine, true);
+  assert.equal(etat.onboarding.prenom, "");
+  assert.deepEqual(etat.onboarding.categoriesPrioritaires, []);
+}
+
+// État avec onboarding partiel : les champs manquants sont complétés, les
+// champs présents ne sont pas écrasés
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({
+      points: 0,
+      gestesCochesParDate: {},
+      onboarding: { termine: true, prenom: "Sam" },
+    }),
+  });
+  const etat = loadState();
+  assert.equal(etat.onboarding.termine, true);
+  assert.equal(etat.onboarding.prenom, "Sam");
+  assert.deepEqual(etat.onboarding.categoriesPrioritaires, []);
+  assert.equal(etat.onboarding.heureRappel, "19:00");
 }
 
 console.log("✅ tests state (localStorage/migrations) : OK");

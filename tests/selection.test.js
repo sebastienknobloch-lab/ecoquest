@@ -57,4 +57,41 @@ const gestes = JSON.parse(
   });
 }
 
+// Avec 3 catégories prioritaires valides (issues de l'onboarding), la sélection
+// du jour vient exactement de ces 3 catégories, quelle que soit la date
+{
+  const prioritaires = ["dechets", "numerique", "energie"];
+  const dates = ["2026-09-12", "2026-09-13", "2026-12-31"];
+  dates.forEach((date) => {
+    const selection = selectionDuJour(gestes, date, prioritaires);
+    const categories = selection.map((g) => g.categorie).sort();
+    assert.deepEqual(categories, [...prioritaires].sort(), `${date} : catégories prioritaires attendues`);
+  });
+}
+
+// Les catégories prioritaires ne changent pas le nombre de gestes ni l'unicité
+{
+  const selection = selectionDuJour(gestes, "2026-09-12", ["energie", "alimentation", "dechets"]);
+  assert.equal(selection.length, 3);
+  assert.equal(new Set(selection.map((g) => g.id)).size, 3);
+}
+
+// Moins de 3 catégories prioritaires (onboarding pas encore fait, ou pas assez
+// de choix) : retombe sur le tirage aléatoire habituel, comme sans priorités
+{
+  const avecUneSeule = selectionDuJour(gestes, "2026-09-12", ["energie"]).map((g) => g.id);
+  const sansPriorite = selectionDuJour(gestes, "2026-09-12").map((g) => g.id);
+  assert.deepEqual(avecUneSeule, sansPriorite);
+}
+
+// Une catégorie prioritaire inconnue (catalogue ayant changé depuis le choix
+// de l'utilisateur) invalide tout le trio : retombe sur le tirage aléatoire
+{
+  const avecInconnue = selectionDuJour(gestes, "2026-09-12", ["energie", "dechets", "categorie-disparue"]).map(
+    (g) => g.id
+  );
+  const sansPriorite = selectionDuJour(gestes, "2026-09-12").map((g) => g.id);
+  assert.deepEqual(avecInconnue, sansPriorite);
+}
+
 console.log("✅ tests sélection du jour : OK");

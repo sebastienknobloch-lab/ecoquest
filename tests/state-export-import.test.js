@@ -12,6 +12,7 @@ function etatValide() {
     streak: { actuel: 2, dernierJourValide: "2026-01-01", dernierJourViaJoker: false, jokerUtiliseDansStreak: false },
     joker: { disponible: 1, semaine: "2026-W01", dejaUtilise: false },
     erreurs: [],
+    onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "19:00" },
   };
 }
 
@@ -67,6 +68,18 @@ function etatValide() {
   assert.equal(validerEtat(sansErreurs), true);
 }
 
+// validerEtat : rejette un onboarding mal formé, mais accepte son absence
+// (exports faits avant l'ajout de l'onboarding, session 18)
+{
+  assert.equal(validerEtat({ ...etatValide(), onboarding: { termine: true } }), false);
+  assert.equal(
+    validerEtat({ ...etatValide(), onboarding: { ...etatValide().onboarding, categoriesPrioritaires: "energie" } }),
+    false
+  );
+  const { onboarding, ...sansOnboarding } = etatValide();
+  assert.equal(validerEtat(sansOnboarding), true);
+}
+
 // importerEtatJSON : JSON syntaxiquement invalide → rejeté avec un message, sans exception
 {
   const resultat = importerEtatJSON("{ceci n'est pas du json");
@@ -91,6 +104,7 @@ function etatValide() {
   assert.deepEqual(resultat.etat.gestesCochesParDate, etat.gestesCochesParDate);
   assert.deepEqual(resultat.etat.streak, etat.streak);
   assert.deepEqual(resultat.etat.joker, etat.joker);
+  assert.deepEqual(resultat.etat.onboarding, etat.onboarding);
 }
 
 // importerEtatJSON : accepte aussi un état brut, sans enveloppe

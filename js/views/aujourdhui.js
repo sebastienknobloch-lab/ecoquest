@@ -195,7 +195,8 @@ export function renderAujourdhui(container, initialState, persist) {
 
   function afficherGestesDuJour(dateISO) {
     duJourListe.innerHTML = "";
-    selectionDuJour(gestes, dateISO).forEach((geste) => {
+    const categoriesPrioritaires = state.onboarding?.categoriesPrioritaires ?? [];
+    selectionDuJour(gestes, dateISO, categoriesPrioritaires).forEach((geste) => {
       duJourListe.append(creerLigneGeste(geste, dateISO, { microAnimation: true }));
     });
   }
