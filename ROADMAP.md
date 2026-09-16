@@ -86,7 +86,7 @@ Rien de visible pour l'utilisateur. Tout le reste s'appuie dessus.
 - [x] **S14** — *« Ajoute dans `js/state.js` un export complet de l'état en JSON et un import avec validation, exposés sur l'écran Profil. L'import refuse un fichier invalide sans écraser l'état existant. Tests inclus. »*
 - [x] **S15** — *« Vérifie un par un les gestes de `data/gestes.json` marqués `a_verifier: true` contre les ordres de grandeur ADEME / Impact CO2. Corrige valeur et source, ou retire le geste. Dis-moi lesquels tu as retirés. »*
 - [x] **S16** — *« Même travail pour `EQUIVALENCES_IMPACT` dans `js/gamification.js` : source précise pour chaque facteur, ou retrait de l'équivalence. »*
-- [ ] **S17** — *« Écris README.md pour un visiteur extérieur : promesse, capture, stack, comment lancer les tests, licence. Ajoute LICENSE (MIT). »*
+- [x] **S17** — *« Écris README.md pour un visiteur extérieur : promesse, capture, stack, comment lancer les tests, licence. Ajoute LICENSE (MIT). »*
 - [ ] **S18** — *« Onboarding en 3 écrans : prénom, 3 catégories prioritaires, heure de rappel souhaitée. Les gestes du jour tiennent compte des priorités. L'heure est stockée, pas encore utilisée. »*
 - [ ] **S19** — *« Historique : calendrier du mois avec les jours actifs colorés, sur l'écran Profil. »*
 - [ ] **S20** — *« Rédige `privacy.html` : politique de confidentialité exigée par le Play Store, à l'état actuel de l'app (données locales uniquement, aucune collecte). À faire évoluer en phase 4 et en S65. »*
