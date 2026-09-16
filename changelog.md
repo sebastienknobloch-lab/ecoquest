@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-16 — Session 17 : README.md et licence MIT
+- Dette listée dans `CLAUDE.md` : dépôt sans README, sans description, sans licence.
+- Ajout de `README.md` pour un visiteur extérieur : promesse du produit, capture d'écran, tableau de stack, comment lancer l'app en local et les tests, licence.
+- Capture d'écran réelle de l'écran « Aujourd'hui » générée avec Playwright/Chromium (viewport 390×844) et ajoutée dans `docs/screenshot.png`.
+- Ajout de `LICENSE` (MIT), au nom de l'auteur du dépôt.
+
 ## 2026-09-16 — Session 16 : Sourçage précis de `EQUIVALENCES_IMPACT`
 - Dette listée dans `CLAUDE.md` : les 3 facteurs de conversion de `EQUIVALENCES_IMPACT` (`js/gamification.js`) étaient des ordres de grandeur jamais confrontés précisément à une source ADEME/Impact CO2.
 - **voiture (193 g/km)** : gardé, source précisée. Ce chiffre correspond au périmètre ADEME Base Carbone "voiture particulière, moyenne nationale toutes distances et toutes carburations" — carburant (amont + combustion) uniquement, hors fabrication du véhicule. C'est le bon périmètre conceptuel pour "km évités" : ne pas rouler n'évite pas la fabrication déjà réalisée du véhicule, seulement le carburant. À distinguer du chiffre cycle de vie complet (~218 g/km, avec fabrication amortie) que cite Impact CO2 pour "voiture thermique".
