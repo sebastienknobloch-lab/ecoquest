@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-16 — Session 20 : `privacy.html`, politique de confidentialité
+- Ajout de `privacy.html` à la racine (page statique autonome, sans dépendance à `js/app.js` ni au reste de l'app, pour être servie seule via GitHub Pages comme l'exige la fiche Play Store — session 27).
+- Contenu conforme à l'état actuel de l'app : aucune collecte, aucun compte, aucun serveur. Détaille les données réellement stockées en local (`localStorage` : prénom, catégories prioritaires, heure de rappel, gestes validés, points/niveau/série/badges, historique, journal d'erreurs de diagnostic), l'absence de partage à des tiers, le fonctionnement des notifications locales (demande après le premier geste validé, désactivable en deux gestes), la suppression des données (désinstallation ou vidage du stockage, export JSON possible avant), et l'usage familial avec enfants sans collecte de données à leur sujet.
+- Contact éditeur : email du développeur, à titre individuel (pas de société).
+- Section « Évolution de cette politique » qui annonce explicitement les révisions à venir : passage à une synchronisation en ligne (phase 4) et version RGPD complète avec droits d'accès/portabilité/effacement avant tout compte utilisateur (session 65), comme prévu dans `ROADMAP.md`.
+- Style repris des variables couleur d'`css/app.css` (`--eco-green`, `--eco-green-dark`, `--eco-bg`) mais en CSS inline autonome, cette page devant rester lisible indépendamment de l'app.
+
 ## 2026-09-16 — Session 19 : Historique — calendrier du mois sur l'écran Profil
 - `js/gamification.js` : nouvelles fonctions pures `calendrierMois(state, dateReference)` (jours du mois désigné par `dateReference`, avec `nbGestes`/`actif` reconstruits à la volée depuis `gestesCochesParDate`, jamais stockés — même règle que niveau/badges/impact) et `moisAdjacent(dateReference, delta)` (mois précédent/suivant, toujours ramené au 1er du mois).
 - `js/views/profil.js` : nouvelle section "🗓️ Ton historique" entre l'impact cumulé et les badges — grille 7 colonnes (L à D), jours actifs colorés en vert, jour courant entouré, boutons précédent/suivant (44 px, `aria-label`), navigation bloquée au-delà du mois courant (rien à afficher dans le futur). Chaque case porte un `aria-label` explicite (ex. "12 septembre 2026 : 2 gestes validés"). Le mois affiché est un état local à l'écran (pas persisté dans `state`) ; rafraîchi après un import de sauvegarde comme l'impact et les badges.
