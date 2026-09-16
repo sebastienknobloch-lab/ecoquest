@@ -457,6 +457,12 @@ html, body {
   z-index: 10;
 }
 
+/* Masquée pendant l'onboarding (voir js/app.js) : sans cette règle, `display:
+   flex` ci-dessus l'emporterait sur l'attribut natif `hidden`. */
+.tab-bar[hidden] {
+  display: none;
+}
+
 .tab-btn {
   flex: 1;
   display: flex;
@@ -578,6 +584,82 @@ html, body {
   color: #3a3a3a;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Onboarding : 3 écrans affichés une seule fois avant la navigation à
+   onglets (voir js/views/onboarding.js), la tab-bar étant masquée pendant. */
+.onboarding {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.onboarding-etape-compteur {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6a6a6a;
+}
+
+.onboarding-consigne {
+  margin: -8px 0 0;
+  color: #3a3a3a;
+}
+
+.onboarding-label {
+  font-weight: bold;
+  color: var(--eco-green-dark);
+}
+
+.onboarding-champ {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #c8c4b8;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: #ffffff;
+  color: var(--eco-text);
+}
+
+.onboarding-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboarding-categorie {
+  background: #ffffff;
+  color: var(--eco-text);
+  border: 2px solid #e0e0e0;
+  text-align: left;
+  font-weight: normal;
+}
+
+.onboarding-categorie--selectionnee {
+  border-color: var(--eco-green);
+  background: rgba(46, 125, 50, 0.12);
+  color: var(--eco-green-dark);
+  font-weight: bold;
+}
+
+.onboarding-compteur-selection {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6a6a6a;
+  text-align: center;
+}
+
+.onboarding-navigation {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.onboarding-navigation button {
+  flex: 1;
 }
 
 /* Cibles tactiles >= 44px partout où des boutons apparaissent */

@@ -224,20 +224,33 @@ function hashChaine(chaine) {
 
 // Sélectionne 3 gestes du jour dans 3 catégories différentes, de façon déterministe
 // pour une date donnée (même date → même sélection, change à minuit).
-export function selectionDuJour(gestes, dateISO) {
+// `categoriesPrioritaires` (issues de l'onboarding, session 18) : si l'utilisateur
+// en a choisi exactement 3 et qu'elles existent bien dans le catalogue, ce sont
+// elles qui sont retenues plutôt qu'un tirage sur les 5 catégories ; sinon, le
+// tirage aléatoire habituel s'applique (utilisateur pas encore passé par
+// l'onboarding, ou catalogue ayant changé depuis son choix).
+export function selectionDuJour(gestes, dateISO, categoriesPrioritaires = []) {
   const categories = [...new Set(gestes.map((g) => g.categorie))].sort();
   const rand = mulberry32(hashChaine(dateISO));
 
-  const categoriesMelangees = [...categories];
-  for (let i = categoriesMelangees.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [categoriesMelangees[i], categoriesMelangees[j]] = [
-      categoriesMelangees[j],
-      categoriesMelangees[i],
-    ];
+  const prioritairesValides = [...new Set(categoriesPrioritaires)].filter((c) => categories.includes(c));
+
+  let categoriesRetenues;
+  if (prioritairesValides.length === 3) {
+    categoriesRetenues = prioritairesValides;
+  } else {
+    const categoriesMelangees = [...categories];
+    for (let i = categoriesMelangees.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [categoriesMelangees[i], categoriesMelangees[j]] = [
+        categoriesMelangees[j],
+        categoriesMelangees[i],
+      ];
+    }
+    categoriesRetenues = categoriesMelangees.slice(0, 3);
   }
 
-  return categoriesMelangees.slice(0, 3).map((categorie) => {
+  return categoriesRetenues.map((categorie) => {
     const gestesCategorie = gestes
       .filter((g) => g.categorie === categorie)
       .sort((a, b) => a.id.localeCompare(b.id));
