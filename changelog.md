@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-16 — Session 15 : Vérification des gestes `a_verifier` contre ADEME / Impact CO2
+- Dette listée dans `CLAUDE.md` : 25 des 30 gestes de `data/gestes.json` portaient `a_verifier: true`, avec des valeurs `co2_evite_g` provisoires jamais confrontées à une source réelle.
+- Chaque geste a été vérifié un par un contre les ordres de grandeur publiés par l'ADEME (Base Carbone, guides pratiques, études) et l'outil Impact CO2. Trois issues possibles, jamais de valeur inventée : la valeur tenait déjà la route (flag retiré, source précisée), la valeur était fausse d'un facteur significatif (corrigée), ou aucun ordre de grandeur unique et défendable n'existe pour le geste tel que formulé (retiré du catalogue).
+- **9 gestes gardés, flag retiré, valeur inchangée, source précisée** : `debrancher-veille`, `repas-vegetarien`, `legumineuses-proteines`, `covoiturage`, `transport-commun`, `eco-conduite`, `sac-reutilisable`, `limiter-streaming-hd`, `recherche-directe`.
+- **6 gestes gardés avec valeur corrigée** (l'ancienne valeur était surestimée ou sous-estimée d'un facteur ≥ 2, ou la source citée n'existait pas) : `baisser-chauffage` (900 → 1000 g, hypothèse chauffage au gaz précisée), `linge-air-libre` (1500 → 150 g, l'ancienne source "Impact CO2 — Sèche-linge" n'existe pas sur impactco2.fr), `lave-linge-plein` (120 → 50 g), `zero-gaspillage` (400 → 150 g), `eau-du-robinet` (150 → 300 g par litre), `eteindre-wifi-nuit` (40 → 15 g).
+- **10 gestes retirés du catalogue**, faute d'ordre de grandeur ADEME/Impact CO2 unique et défendable :
+  - `fruits-legumes-saison` — l'ADEME ne publie qu'un facteur relatif (ex. "une tomate hors-saison sous serre émet ~7x plus"), jamais de valeur absolue en grammes par portion.
+  - `cuisine-maison` — aucune comparaison chiffrée ADEME entre repas maison et repas livré ; le geste mélange deux variables (contenu de l'assiette vs mode de livraison).
+  - `trajet-groupe` — principe qualitatif cité par l'ADEME (optimisation des trajets) mais sans valeur chiffrée type, dépendante d'une distance inventée.
+  - `trottinette-partagee` — le seul chiffre défendable trouvé (Fraunhofer ISI, Arcadis) n'est pas une source ADEME/Impact CO2, contrainte non négociable de `CLAUDE.md`.
+  - `compost` — écart entre compost et enfouissement (méthane évité) allant de 35 g à 6,25 kg de CO2 par kg selon la filière locale de traitement des déchets : trop variable pour un chiffre unique.
+  - `reparer-plutot-jeter` — les exemples ADEME concrets vont de 28 kg (vêtement) à 100 kg (électroménager) : la valeur générique de 3 kg était sous-estimée d'un facteur 10 à 30 et ne représente aucun objet réel.
+  - `seconde-main` — même problème : 24,6 kg (smartphone reconditionné) à 108 kg (fauteuil de bureau) selon l'ADEME, incompatible avec un chiffre générique.
+  - `supprimer-mails-vieux` — l'ADEME indique elle-même que le stockage ne représente qu'environ 0,5 % de l'empreinte d'un email (92 % vient de la fabrication du terminal) : le geste repose sur une prémisse que la source invalide.
+  - `visio-plutot-que-deplacement` — le déplacement évité varie d'un facteur 60 à 70 selon le mode de transport remplacé (train régional à vol), aucune hypothèse par défaut n'étant défendable.
+  - `mode-sombre-eco` — aucune source ADEME/Impact CO2 ne chiffre d'impact CO2 ; la littérature indépendante disponible est contradictoire et ne porte que sur la batterie, jamais sur les émissions.
+- Catalogue : 30 → 20 gestes. Répartition par catégorie : `energie` 6, `alimentation` 4, `deplacements` 4, `dechets` 3, `numerique` 3 (n'est plus équilibrée à 6/catégorie).
+- `tests/points.test.js` : le total attendu passe de 30 à 20 ; l'assertion "exactement 6 gestes par catégorie" est remplacée par "au moins 3 gestes par catégorie" (le minimum pour garder de la variété dans la sélection du jour), puisque l'équilibrage strict à 6 n'a plus de raison d'être une fois les gestes invérifiables retirés.
+- `sw.js` : `data/gestes.json` fait partie de l'app shell précaché ; cache renommé `ecoquest-shell-v18` pour propager le nouveau catalogue aux appareils qui ont déjà installé l'app.
+
 ## 2026-09-14 — Session 14 : Export/import JSON de l'état, exposés en Profil
 - Dette listée dans `CLAUDE.md` : aucun export des données, un vidage du stockage du navigateur détruisait tout l'historique. Seul filet de sécurité en attendant la synchronisation Supabase (phase 4).
 - `js/state.js` : `exporterEtatJSON(state)` sérialise l'état dans une enveloppe `{ format: "ecoquest-export", version, exporteLe, etat }` (plutôt que l'état brut) pour pouvoir distinguer un fichier EcoQuest d'un JSON quelconque à l'import, et faire évoluer le format plus tard sans casser les anciens exports.

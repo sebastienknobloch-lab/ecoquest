@@ -93,7 +93,7 @@ function gesteParId(id) {
 
 // Le catalogue contient exactement 30 gestes
 {
-  assert.equal(gestes.length, 30);
+  assert.equal(gestes.length, 20);
 }
 
 // Les ids du catalogue sont uniques
@@ -133,11 +133,12 @@ function gesteParId(id) {
     });
 }
 
-// Chaque catégorie contient exactement 6 gestes (5 catégories x 6 = 30)
+// Chaque catégorie contient au moins 3 gestes, pour que la sélection du jour
+// (1 geste par catégorie tirée) garde un minimum de variété au fil des jours
 {
   CATEGORIES_VALIDES.forEach((categorie) => {
     const count = gestes.filter((g) => g.categorie === categorie).length;
-    assert.equal(count, 6, `catégorie ${categorie} : ${count} gestes au lieu de 6`);
+    assert.ok(count >= 3, `catégorie ${categorie} : ${count} gestes, au moins 3 attendus`);
   });
 }
 

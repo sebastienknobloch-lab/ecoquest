@@ -24,8 +24,7 @@
     "difficulte": 1,
     "points": 10,
     "co2_evite_g": 50,
-    "source": "ADEME, \"Lutter contre les veilles inutiles\" (estimation)",
-    "a_verifier": true
+    "source": "ADEME, \"Lutter contre les veilles inutiles\" — veilles domestiques estimées à 300-500 kWh/an par foyer (estimation pour un foyer débranchant l'ensemble de ses appareils en veille sur une journée)"
   },
   {
     "id": "baisser-chauffage",
@@ -33,9 +32,8 @@
     "categorie": "energie",
     "difficulte": 2,
     "points": 20,
-    "co2_evite_g": 900,
-    "source": "ADEME, \"Baisser son chauffage d'un degré\" (estimation)",
-    "a_verifier": true
+    "co2_evite_g": 1000,
+    "source": "ADEME, \"Bien régler son chauffage\" — réduction d'environ 7 % de la consommation par degré baissé, pour un logement chauffé au gaz (estimation ; effet environ 3 fois plus faible pour un chauffage électrique)"
   },
   {
     "id": "linge-air-libre",
@@ -43,9 +41,8 @@
     "categorie": "energie",
     "difficulte": 2,
     "points": 20,
-    "co2_evite_g": 1500,
-    "source": "Impact CO2 (ADEME), \"Sèche-linge\" (estimation)",
-    "a_verifier": true
+    "co2_evite_g": 150,
+    "source": "ADEME, consommation moyenne d'un sèche-linge (environ 1,5 à 2 kWh par cycle) et facteur d'émission de l'électricité en France (estimation)"
   },
   {
     "id": "lave-linge-plein",
@@ -53,9 +50,8 @@
     "categorie": "energie",
     "difficulte": 1,
     "points": 10,
-    "co2_evite_g": 120,
-    "source": "ADEME, \"Bien utiliser son lave-linge\" (estimation)",
-    "a_verifier": true
+    "co2_evite_g": 50,
+    "source": "ADEME, consommation moyenne d'un lave-linge (environ 0,5 à 0,9 kWh par cycle) et facteur d'émission de l'électricité en France (estimation pour un cycle évité)"
   },
   {
     "id": "repas-vegetarien",
@@ -64,18 +60,7 @@
     "difficulte": 2,
     "points": 20,
     "co2_evite_g": 1600,
-    "source": "Impact CO2 (ADEME), \"Empreinte carbone de l'alimentation\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "fruits-legumes-saison",
-    "libelle": "Manger des fruits et légumes de saison",
-    "categorie": "alimentation",
-    "difficulte": 1,
-    "points": 10,
-    "co2_evite_g": 200,
-    "source": "ADEME, \"Alimentation de saison et locale\" (estimation)",
-    "a_verifier": true
+    "source": "Impact CO2 (ADEME), outil \"Repas végétarien\" — comparé à un repas avec viande, toutes viandes confondues (estimation)"
   },
   {
     "id": "zero-gaspillage",
@@ -83,9 +68,8 @@
     "categorie": "alimentation",
     "difficulte": 1,
     "points": 10,
-    "co2_evite_g": 400,
-    "source": "ADEME, \"Lutter contre le gaspillage alimentaire\" (estimation)",
-    "a_verifier": true
+    "co2_evite_g": 150,
+    "source": "ADEME, étude \"Pertes et gaspillages alimentaires\" (2016) — environ 1,5 kg CO2e par kg de nourriture gaspillée, pour une portion d'environ 100 g (estimation)"
   },
   {
     "id": "eau-du-robinet",
@@ -93,9 +77,8 @@
     "categorie": "alimentation",
     "difficulte": 1,
     "points": 10,
-    "co2_evite_g": 150,
-    "source": "Impact CO2 (ADEME), \"Eau en bouteille vs eau du robinet\" (estimation)",
-    "a_verifier": true
+    "co2_evite_g": 300,
+    "source": "Impact CO2 (ADEME), outils \"Eau en bouteille\" et \"Eau du robinet\" — écart d'environ 320 g CO2e par litre (estimation pour 1 litre)"
   },
   {
     "id": "legumineuses-proteines",
@@ -104,18 +87,7 @@
     "difficulte": 2,
     "points": 20,
     "co2_evite_g": 1200,
-    "source": "ADEME, \"Protéines végétales et impact carbone\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "cuisine-maison",
-    "libelle": "Cuisiner un repas maison plutôt que d'en commander un",
-    "categorie": "alimentation",
-    "difficulte": 2,
-    "points": 20,
-    "co2_evite_g": 800,
-    "source": "ADEME, \"Impact environnemental de la livraison de repas\" (estimation)",
-    "a_verifier": true
+    "source": "Impact CO2 (ADEME) / base Agribalyse, comparatif protéines animales (viande moyenne) et légumineuses pour un repas (estimation)"
   },
   {
     "id": "velo-marche",
@@ -133,8 +105,7 @@
     "difficulte": 2,
     "points": 20,
     "co2_evite_g": 1200,
-    "source": "Impact CO2 (ADEME), \"Covoiturage\" (estimation)",
-    "a_verifier": true
+    "source": "ADEME, comparateur \"Mon Impact Transport\" — covoiturage à deux personnes pour un trajet d'environ 8 à 10 km (estimation)"
   },
   {
     "id": "transport-commun",
@@ -143,8 +114,7 @@
     "difficulte": 2,
     "points": 20,
     "co2_evite_g": 900,
-    "source": "Impact CO2 (ADEME), comparateur des moyens de transport (estimation)",
-    "a_verifier": true
+    "source": "ADEME, Base Carbone (voiture particulière environ 218 g CO2e/km, bus urbain environ 100 g CO2e/km) pour un trajet d'environ 8 km (estimation)"
   },
   {
     "id": "eco-conduite",
@@ -153,28 +123,7 @@
     "difficulte": 1,
     "points": 10,
     "co2_evite_g": 300,
-    "source": "ADEME, \"L'éco-conduite\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "trajet-groupe",
-    "libelle": "Grouper ses courses en un seul trajet",
-    "categorie": "deplacements",
-    "difficulte": 1,
-    "points": 10,
-    "co2_evite_g": 400,
-    "source": "ADEME, \"Optimiser ses déplacements du quotidien\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "trottinette-partagee",
-    "libelle": "Se déplacer en vélo ou trottinette en libre-service",
-    "categorie": "deplacements",
-    "difficulte": 1,
-    "points": 10,
-    "co2_evite_g": 350,
-    "source": "Impact CO2 (ADEME), \"Mobilités partagées\" (estimation)",
-    "a_verifier": true
+    "source": "ADEME, \"L'éco-conduite : une solution pour consommer moins de carburant\" — réduction de 10 à 15 % pour un trajet d'environ 10 km (estimation)"
   },
   {
     "id": "gourde-reutilisable",
@@ -201,38 +150,7 @@
     "difficulte": 1,
     "points": 10,
     "co2_evite_g": 40,
-    "source": "ADEME, \"Sacs plastiques à usage unique\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "compost",
-    "libelle": "Composter ses déchets alimentaires",
-    "categorie": "dechets",
-    "difficulte": 2,
-    "points": 20,
-    "co2_evite_g": 250,
-    "source": "ADEME, \"Le compostage domestique\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "reparer-plutot-jeter",
-    "libelle": "Réparer un objet plutôt que le jeter",
-    "categorie": "dechets",
-    "difficulte": 3,
-    "points": 30,
-    "co2_evite_g": 3000,
-    "source": "ADEME, \"Allonger la durée de vie des objets\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "seconde-main",
-    "libelle": "Acheter ou donner un objet en seconde main",
-    "categorie": "dechets",
-    "difficulte": 2,
-    "points": 20,
-    "co2_evite_g": 2000,
-    "source": "ADEME, \"Réemploi et achat de seconde main\" (estimation)",
-    "a_verifier": true
+    "source": "ADEME, Base Carbone (sac plastique à usage unique, environ 10 g CO2e par sac) — pour environ 4 sacs jetables évités lors d'une session de courses (estimation)"
   },
   {
     "id": "limiter-streaming-hd",
@@ -241,18 +159,7 @@
     "difficulte": 1,
     "points": 10,
     "co2_evite_g": 15,
-    "source": "ADEME/Arcep, \"Évaluation environnementale du numérique en France\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "supprimer-mails-vieux",
-    "libelle": "Supprimer ses vieux mails et pièces jointes inutiles",
-    "categorie": "numerique",
-    "difficulte": 1,
-    "points": 10,
-    "co2_evite_g": 10,
-    "source": "ADEME, \"Impact environnemental du stockage de données\" (estimation)",
-    "a_verifier": true
+    "source": "ADEME/Arcom/Arcep, \"Impact environnemental des usages audiovisuels en France\" (2024) (estimation)"
   },
   {
     "id": "eteindre-wifi-nuit",
@@ -260,9 +167,8 @@
     "categorie": "numerique",
     "difficulte": 1,
     "points": 10,
-    "co2_evite_g": 40,
-    "source": "ADEME, \"Consommation des équipements numériques\" (estimation)",
-    "a_verifier": true
+    "co2_evite_g": 15,
+    "source": "ADEME, consommation moyenne d'une box internet (environ 20 à 35 W en continu) et facteur d'émission de l'électricité en France, pour 8h éteinte (estimation)"
   },
   {
     "id": "recherche-directe",
@@ -271,27 +177,6 @@
     "difficulte": 1,
     "points": 10,
     "co2_evite_g": 5,
-    "source": "ADEME, \"Sobriété numérique au quotidien\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "visio-plutot-que-deplacement",
-    "libelle": "Faire une visioconférence plutôt qu'un déplacement",
-    "categorie": "numerique",
-    "difficulte": 2,
-    "points": 20,
-    "co2_evite_g": 5000,
-    "source": "Impact CO2 (ADEME), \"Visioconférence vs déplacement professionnel\" (estimation)",
-    "a_verifier": true
-  },
-  {
-    "id": "mode-sombre-eco",
-    "libelle": "Activer le mode sombre sur son écran",
-    "categorie": "numerique",
-    "difficulte": 1,
-    "points": 10,
-    "co2_evite_g": 5,
-    "source": "ADEME, \"Écoconception des services numériques\" (estimation)",
-    "a_verifier": true
+    "source": "ADEME, étude 2011 sur les impacts environnementaux des pratiques numériques (estimation)"
   }
 ]
