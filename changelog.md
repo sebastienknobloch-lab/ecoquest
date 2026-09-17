@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-17 — Session 26 : `android.yml` builde un AAB de release signé
+
+- `.github/workflows/android.yml` : remplace le build APK de debug (session 22) par un build **AAB de release signé**, seul format accepté par le Play Store. Après `npx cap sync android`, le workflow décode le keystore depuis le secret `ANDROID_KEYSTORE_BASE64` (base64 → fichier binaire dans `$RUNNER_TEMP`, jamais dans le repo ni dans `/android`), vérifie qu'il n'est pas vide, puis lance `./gradlew bundleRelease` avec un init-script Gradle qui injecte la configuration de signature. Le fichier décodé est supprimé en fin de job (`if: always()`), y compris si le build échoue.
+- Nouveau fichier `.github/gradle/signing-init.gradle` : configure `signingConfigs.release` et `buildTypes.release.signingConfig` du module `app` via `gradle.beforeProject` + `afterEvaluate`, **sans jamais modifier `android/app/build.gradle`** — ce fichier est régénéré à chaque build par `npx cap add android` et n'a donc pas de source stable à éditer. Les 4 valeurs (chemin du keystore, mot de passe du keystore, alias, mot de passe de la clé) sont lues uniquement depuis des variables d'environnement, jamais écrites sur disque ni affichées.
+- Secrets GitHub requis (Settings → Secrets and variables → Actions), documentés en commentaire en tête d'`android.yml` : `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Le keystore généré en session 25 doit être encodé avec `base64 -w0 keystore.jks` et collé comme valeur du premier secret ; les 3 autres reprennent les mots de passe/alias choisis à la création du keystore.
+- Aucun log ne peut révéler le keystore ou les mots de passe : ils ne transitent que par des variables d'environnement consommées directement par Gradle (jamais un `echo`/`cat` dessus), `set +x` posé sur chaque étape sensible par défense en profondeur, et GitHub masque de toute façon automatiquement la valeur de tout secret référencé via `${{ secrets.* }}` s'il apparaissait dans un log.
+- L'artifact publié passe de `ecoquest-debug-apk` (`.apk` non signé) à `ecoquest-release-aab` (`android/app/build/outputs/bundle/release/app-release.aab`), prêt à être déposé sur la piste de test fermé du Play Console (session 27).
+- Pas de changement côté app web : rien à tester sur téléphone pour cette session. Vérification prévue en poussant un nouveau tag — voir « Comment tester » ci-dessous.
+
 ## 2026-09-17 — Correctif post-session 22 : `webDir: "."` invalide pour Capacitor
 
 - Premier tag `v0.1.0` poussé par Sébastien → le job a échoué en 15s sur `npx cap add android` : `"." is not a valid value for webDir`. La CLI Capacitor refuse explicitement `.`, `..`, `./`, `../` et `""` comme valeur de `webDir` (vérifié dans le code source de `@capacitor/cli`), indépendamment de ce que dit `CLAUDE.md` sur « webDir = racine du repo ».
