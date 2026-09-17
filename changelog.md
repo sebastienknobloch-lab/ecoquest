@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-17 — Session 22 : `.github/workflows/android.yml`, build APK de debug en CI
+
+- Ajout de `.github/workflows/android.yml` : déclenché sur push d'un tag `v*`. Installe Node 22 et Java 21 (Temurin, requis par Gradle), `npm install` (dépendances Capacitor ajoutées en session 21), `npx cap add android` pour générer la plateforme (jamais commitée), `npx cap sync android` pour copier les fichiers web dans la coquille, puis `./gradlew assembleDebug` pour produire un APK de debug non signé.
+- L'APK (`android/app/build/outputs/apk/debug/app-debug.apk`) est publié comme artifact du workflow via `actions/upload-artifact` sous le nom `ecoquest-debug-apk`, téléchargeable depuis l'onglet Actions.
+- Pas de signature à ce stade (build debug, clé de debug auto-générée par Gradle) : la variante signée (AAB pour le Play Store) est prévue en session 26 avec un keystore stocké en secret CI.
+- Rien à tester sur téléphone pour cette session : le workflow ne se déclenche que sur un tag, à créer en session 23 pour obtenir le premier APK installable.
+
 ## 2026-09-17 — Session 21 : `capacitor.config.json` et `package.json` minimal
 
 - Début Phase 2 (Coquille Android) : ajout de `capacitor.config.json` à la racine — `appId: "app.ecoquest"`, `appName: "EcoQuest"`, `webDir: "."` (la coquille Capacitor sert directement les fichiers du repo, pas un dossier de build).
