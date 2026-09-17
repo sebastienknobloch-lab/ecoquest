@@ -99,7 +99,7 @@ Objectif : une app installable, buildée sans jamais ouvrir Android Studio.
 - [x] **S22** — *« Crée `.github/workflows/android.yml` : sur tag `v*`, installer les dépendances, `npx cap add android`, builder un APK de debug non signé, le publier comme artifact du workflow. »*
 - [x] **S23** — Tag, télécharger l'APK depuis l'onglet Actions, l'installer. Noter tout ce qui casse dans la WebView.
 - [x] **S24** — *« Corrige : [ce que tu as vu]. »*
-- [ ] **S25** — 🖥️ Keystore de signature en secret GitHub (voir H2, normalement déjà fait).
+- [x] **S25** — 🖥️ Keystore de signature en secret GitHub (voir H2, normalement déjà fait).
 - [ ] **S26** — *« Fais évoluer `android.yml` : builder un AAB signé avec le keystore des secrets, publié comme artifact. Ne logue jamais le keystore ni les mots de passe. »*
 - [ ] **S27** — 🖥️ Fiche Play Store : titre, descriptions, captures, icône, URL de `privacy.html` sur GitHub Pages. Ouvrir une **piste de test fermé**.
 - [ ] **S28** — ✅ **Jalon** : 12 testeurs inscrits et actifs sur la piste fermée. Le compteur des 14 jours démarre ici, et rien ne l'accélère.
