@@ -1,0 +1,42 @@
+// Configure la signature release du module "app" sans jamais toucher à
+// android/app/build.gradle : ce fichier est régénéré à chaque build par
+// `npx cap add android` (dossier /android non commité, voir CLAUDE.md) et
+// n'a donc pas de logique de signature stable à faire évoluer.
+//
+// Lit le keystore et les mots de passe uniquement depuis les variables
+// d'environnement ANDROID_KEYSTORE_PATH / ANDROID_KEYSTORE_PASSWORD /
+// ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD (positionnées par android.yml
+// à partir des secrets GitHub). Rien ici n'affiche ni n'écrit ces valeurs :
+// elles ne passent que par la mémoire du process Gradle.
+//
+// beforeProject (avant l'évaluation de build.gradle) enregistre notre
+// afterEvaluate en premier, donc avant ceux posés par le plugin Android au
+// fil de l'évaluation : la configuration de signature est bien en place
+// avant que le plugin ne construise ses tâches de bundleRelease.
+gradle.beforeProject { project ->
+    if (project.name == "app") {
+        project.afterEvaluate {
+            def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (!keystorePath) {
+                throw new GradleException(
+                    "ANDROID_KEYSTORE_PATH manquant : le keystore de signature n'a pas été fourni à Gradle."
+                )
+            }
+            project.android {
+                signingConfigs {
+                    release {
+                        storeFile project.file(keystorePath)
+                        storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                        keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                        keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+                    }
+                }
+                buildTypes {
+                    release {
+                        signingConfig signingConfigs.release
+                    }
+                }
+            }
+        }
+    }
+}
