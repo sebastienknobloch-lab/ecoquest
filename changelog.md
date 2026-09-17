@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-17 — Session 21 : `capacitor.config.json` et `package.json` minimal
+
+- Début Phase 2 (Coquille Android) : ajout de `capacitor.config.json` à la racine — `appId: "app.ecoquest"`, `appName: "EcoQuest"`, `webDir: "."` (la coquille Capacitor sert directement les fichiers du repo, pas un dossier de build).
+- `package.json` : ajout des dépendances Capacitor minimales pour permettre `npx cap add android` en CI — `@capacitor/core` et `@capacitor/android` en dépendances, `@capacitor/cli` en dev-dépendance. Rien à installer en local : ces paquets ne sont utilisés que par `.github/workflows/android.yml` (session 22).
+- Ajout de `.gitignore` : `/android` (généré à la volée par la CI à chaque build, jamais commité — voir `CLAUDE.md`) et `node_modules/`.
+- Rien à tester sur téléphone pour cette session : fichiers de configuration CI uniquement, aucun impact sur l'app servie.
+
 ## 2026-09-16 — Session 20 : `privacy.html`, politique de confidentialité
 - Ajout de `privacy.html` à la racine (page statique autonome, sans dépendance à `js/app.js` ni au reste de l'app, pour être servie seule via GitHub Pages comme l'exige la fiche Play Store — session 27).
 - Contenu conforme à l'état actuel de l'app : aucune collecte, aucun compte, aucun serveur. Détaille les données réellement stockées en local (`localStorage` : prénom, catégories prioritaires, heure de rappel, gestes validés, points/niveau/série/badges, historique, journal d'erreurs de diagnostic), l'absence de partage à des tiers, le fonctionnement des notifications locales (demande après le premier geste validé, désactivable en deux gestes), la suppression des données (désinstallation ou vidage du stockage, export JSON possible avant), et l'usage familial avec enfants sans collecte de données à leur sujet.
