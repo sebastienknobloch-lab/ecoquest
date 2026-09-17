@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-17 — Correctif post-session 22 : `webDir: "."` invalide pour Capacitor
+
+- Premier tag `v0.1.0` poussé par Sébastien → le job a échoué en 15s sur `npx cap add android` : `"." is not a valid value for webDir`. La CLI Capacitor refuse explicitement `.`, `..`, `./`, `../` et `""` comme valeur de `webDir` (vérifié dans le code source de `@capacitor/cli`), indépendamment de ce que dit `CLAUDE.md` sur « webDir = racine du repo ».
+- `capacitor.config.json` : `webDir` passe de `"."` à `"www"`.
+- `android.yml` : nouvelle étape « Préparer webDir (www/) » avant `npx cap add android`, qui copie `index.html`, `manifest.webmanifest`, `sw.js`, `css/`, `icons/`, `js/`, `data/` dans un dossier `www/` généré à la volée — jamais commité, même logique que `/android`. L'auteur continue d'éditer les fichiers à la racine du repo, rien ne change pour lui.
+- `.gitignore` : ajout de `/www`.
+- Vérifié en local (`npx cap add android` puis `npx cap sync android`) : les deux réussissent maintenant et les assets web atterrissent bien dans `android/app/src/main/assets/public`.
+- À faire par Sébastien : pousser un nouveau tag (ex. `v0.1.1`) pour redéclencher le build avec ce correctif.
+
 ## 2026-09-17 — Session 22 : `.github/workflows/android.yml`, build APK de debug en CI
 
 - Ajout de `.github/workflows/android.yml` : déclenché sur push d'un tag `v*`. Installe Node 22 et Java 21 (Temurin, requis par Gradle), `npm install` (dépendances Capacitor ajoutées en session 21), `npx cap add android` pour générer la plateforme (jamais commitée), `npx cap sync android` pour copier les fichiers web dans la coquille, puis `./gradlew assembleDebug` pour produire un APK de debug non signé.

@@ -23,6 +23,12 @@ jobs:
       - name: Installer les dépendances
         run: npm install
 
+      - name: Préparer webDir (www/)
+        run: |
+          mkdir -p www
+          cp index.html manifest.webmanifest sw.js www/
+          cp -r css icons js data www/
+
       - name: Ajouter la plateforme Android
         run: npx cap add android
 
