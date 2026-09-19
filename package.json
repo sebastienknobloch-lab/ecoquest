@@ -4,10 +4,10 @@
   "type": "module",
   "description": "Zéro build : ce fichier sert uniquement à exécuter les tests avec node et à builder la coquille Android en CI.",
   "dependencies": {
-    "@capacitor/core": "^7.0.0",
-    "@capacitor/android": "^7.0.0"
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^8.0.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.0.0"
+    "@capacitor/cli": "^8.0.0"
   }
 }
