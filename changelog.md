@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-19 — Correctif : Capacitor 7 → 8 (Play Store exige l'API niveau 36)
+
+- À l'étape « Créer une release » de la piste de test interne, Play Console bloque l'envoi : « Votre appli cible actuellement le niveau d'API 35. Elle doit cibler au minimum le niveau d'API 36 ». Le gabarit Android généré par `npx cap add android` reprend le `compileSdk`/`targetSdk` par défaut de `@capacitor/android` — 35 pour la branche 7.x que `package.json` épinglait (`^7.0.0`), 36 pour la 8.x (vérifié dans le `build.gradle` du module `capacitor` des deux versions).
+- `package.json` : `@capacitor/core`, `@capacitor/android` et `@capacitor/cli` passent de `^7.0.0` à `^8.0.0`. Aucun code de l'app n'appelle une API Capacitor à ce stade (aucun `import "@capacitor/*"` dans `js/`), donc rien d'autre à adapter côté JS.
+- `/android` n'étant jamais commité, ce changement de version suffit : le prochain build CI régénère la coquille avec le bon niveau d'API, sans toucher à un fichier Gradle généré à la main.
+- Nouveau tag à pousser pour obtenir un AAB ciblant l'API 36 — voir « Comment tester » ci-dessous.
+
 ## 2026-09-19 — Correctif : `appId` aligné sur `com.version012.ecoquest`
 
 - Au moment de créer la fiche Play Console, Sébastien tombe sur l'erreur « Votre APK ou votre Android App Bundle doit porter le nom de package com.version012.ecoquest » à l'import de l'AAB produit par `android.yml` — le package name figé côté Play Console (`com.version012.ecoquest`, vraisemblablement auto-généré à partir du tag `v0.1.2`) ne correspondait pas à l'`appId` du repo (`app.ecoquest`, session 21).
