@@ -68,9 +68,16 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # run_number n'augmente jamais deux fois de la même valeur pour ce
+          # workflow : garantit un versionCode Play Store unique et croissant
+          # sans état à maintenir à la main (voir version-init.gradle).
+          ECOQUEST_VERSION_CODE: ${{ github.run_number }}
+          ECOQUEST_VERSION_NAME: ${{ github.ref_name }}
         run: |
           set +x
-          ./gradlew bundleRelease --init-script ../.github/gradle/signing-init.gradle
+          ./gradlew bundleRelease \
+            --init-script ../.github/gradle/signing-init.gradle \
+            --init-script ../.github/gradle/version-init.gradle
 
       - name: Supprimer le keystore déchiffré
         if: always()

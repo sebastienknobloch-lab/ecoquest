@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-19 — Correctif : `versionCode` figé à 1 dans le gabarit Capacitor
+
+- Nouveau blocage à l'import de l'AAB dans Play Console : « Le code de version 1 a déjà été utilisé. Choisissez-en un autre. » Le gabarit Android généré par `npx cap add android` fixe `versionCode 1` / `versionName "1.0"` en dur dans `android/app/build.gradle` (jamais commité, régénéré à chaque build) — le premier upload accepté par Play Console (même abandonné ensuite à cause du blocage API 35/36) a définitivement « consommé » ce versionCode : Play Store exige un `versionCode` strictement croissant et jamais réutilisé sur toute l'histoire de l'app.
+- Nouveau fichier `.github/gradle/version-init.gradle` (même logique que `signing-init.gradle`, session 26) : pose `versionCode`/`versionName` sur `defaultConfig` du module `app` via `gradle.beforeProject` + `afterEvaluate`, sans jamais éditer `android/app/build.gradle`. Lit `ECOQUEST_VERSION_CODE`/`ECOQUEST_VERSION_NAME` depuis l'environnement, jamais de valeur en dur.
+- `android.yml` : l'étape de build passe désormais `ECOQUEST_VERSION_CODE: ${{ github.run_number }}` (n'augmente jamais deux fois de la même valeur pour ce workflow → garantit l'unicité sans état à maintenir à la main) et `ECOQUEST_VERSION_NAME: ${{ github.ref_name }}` (le tag, ex. `v0.1.4`), et ajoute un second `--init-script` à `bundleRelease`.
+- Validé par simulation du DSL Gradle/AGP (`defaultConfig { versionCode ...; versionName ... }`, résolution delegate-first) en Groovy pur, faute d'accès réseau à `dl.google.com` dans cet environnement pour lancer un vrai `bundleRelease` : le compte-rendu complet en CI reste la vérification de référence.
+- Chaque futur tag aura donc automatiquement un `versionCode` neuf — plus besoin d'y penser à chaque release.
+
 ## 2026-09-19 — Correctif : Capacitor 7 → 8 (Play Store exige l'API niveau 36)
 
 - À l'étape « Créer une release » de la piste de test interne, Play Console bloque l'envoi : « Votre appli cible actuellement le niveau d'API 35. Elle doit cibler au minimum le niveau d'API 36 ». Le gabarit Android généré par `npx cap add android` reprend le `compileSdk`/`targetSdk` par défaut de `@capacitor/android` — 35 pour la branche 7.x que `package.json` épinglait (`^7.0.0`), 36 pour la 8.x (vérifié dans le `build.gradle` du module `capacitor` des deux versions).

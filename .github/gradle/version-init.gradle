@@ -1,0 +1,32 @@
+// Configure versionCode/versionName du module "app" sans jamais toucher à
+// android/app/build.gradle : ce fichier est régénéré à chaque build par
+// `npx cap add android` (dossier /android non commité, voir CLAUDE.md), avec
+// versionCode 1 / versionName "1.0" figés dans le gabarit Capacitor.
+//
+// Le Play Store exige un versionCode strictement croissant et jamais réutilisé
+// sur toute l'histoire de l'app (même un release abandonné après upload le
+// "consomme" définitivement) : le laisser à 1 sur chaque build casse l'envoi
+// dès la deuxième release. ECOQUEST_VERSION_CODE (positionné par android.yml à
+// partir de github.run_number, qui n'augmente jamais deux fois de la même
+// valeur pour ce workflow) garantit cette propriété sans état à maintenir à la
+// main. ECOQUEST_VERSION_NAME (dérivé du tag Git) reste le numéro lisible côté
+// utilisateur.
+gradle.beforeProject { project ->
+    if (project.name == "app") {
+        project.afterEvaluate {
+            def envVersionCode = System.getenv("ECOQUEST_VERSION_CODE")
+            if (!envVersionCode) {
+                throw new GradleException(
+                    "ECOQUEST_VERSION_CODE manquant : impossible de garantir un versionCode unique pour cette release."
+                )
+            }
+            def envVersionName = System.getenv("ECOQUEST_VERSION_NAME") ?: envVersionCode
+            project.android {
+                defaultConfig {
+                    versionCode envVersionCode.toInteger()
+                    versionName envVersionName
+                }
+            }
+        }
+    }
+}
