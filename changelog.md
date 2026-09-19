@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-19 — Correctif : `appId` aligné sur `com.version012.ecoquest`
+
+- Au moment de créer la fiche Play Console, Sébastien tombe sur l'erreur « Votre APK ou votre Android App Bundle doit porter le nom de package com.version012.ecoquest » à l'import de l'AAB produit par `android.yml` — le package name figé côté Play Console (`com.version012.ecoquest`, vraisemblablement auto-généré à partir du tag `v0.1.2`) ne correspondait pas à l'`appId` du repo (`app.ecoquest`, session 21).
+- Le nom de package d'une fiche Play Console est définitif dès sa création : seule option sans supprimer/recréer la fiche est d'aligner le code dessus.
+- `capacitor.config.json` : `appId` passe de `app.ecoquest` à `com.version012.ecoquest`.
+- Nouveau tag à pousser pour obtenir un AAB avec le bon package name — voir « Comment tester » ci-dessous.
+
 ## 2026-09-17 — Session 26 : `android.yml` builde un AAB de release signé
 
 - `.github/workflows/android.yml` : remplace le build APK de debug (session 22) par un build **AAB de release signé**, seul format accepté par le Play Store. Après `npx cap sync android`, le workflow décode le keystore depuis le secret `ANDROID_KEYSTORE_BASE64` (base64 → fichier binaire dans `$RUNNER_TEMP`, jamais dans le repo ni dans `/android`), vérifie qu'il n'est pas vide, puis lance `./gradlew bundleRelease` avec un init-script Gradle qui injecte la configuration de signature. Le fichier décodé est supprimé en fin de job (`if: always()`), y compris si le build échoue.
