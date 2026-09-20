@@ -19,6 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Vérifier que APP_VERSION correspond au tag
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          app_version=$(sed -n 's/^export const APP_VERSION = "\(.*\)";$/\1/p' js/version.js)
+          if [ -z "$app_version" ]; then
+            echo "Impossible de lire APP_VERSION dans js/version.js." >&2
+            exit 1
+          fi
+          if [ "$app_version" != "$tag_version" ]; then
+            echo "js/version.js (APP_VERSION=\"$app_version\") ne correspond pas au tag $GITHUB_REF_NAME (attendu \"$tag_version\"). Mets à jour js/version.js dans le même commit que le tag." >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$app_version correspond au tag $GITHUB_REF_NAME."
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
