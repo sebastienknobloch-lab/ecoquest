@@ -29,7 +29,7 @@ Objectif : créer un engagement écologique **mesurable** (gestes réalisés, CO
 | Couche | Choix |
 | --- | --- |
 | Front | HTML / CSS / JS vanilla, modules ES |
-| Coquille mobile | Capacitor (Android d'abord), `webDir` = racine du repo |
+| Coquille mobile | Capacitor (Android d'abord), `webDir` = `www` (dossier généré par `android.yml`, jamais commis ; Capacitor refuse `.` comme valeur — l'auteur continue d'éditer les fichiers à la racine) |
 | Notifications locales | `@capacitor/local-notifications` |
 | Push serveur | FCM, déclenché par une Edge Function Supabase |
 | Backend | Supabase (Postgres, Auth, Storage, Edge Functions, cron) — offre gratuite |
@@ -51,14 +51,22 @@ Décisions écartées, à ne pas rouvrir sans raison nouvelle : Vercel (inutile,
 /js/state.js            → loadState / saveState / migrations / export-import
 /js/gamification.js     → points, niveaux, séries, badges, impact
 /js/notifications.js    → programmation et annulation des rappels
+/js/cache-policy.js     → politique de cache du service worker, fonction pure importée par sw.js
+/js/debug.js            → console de debug embarquée (Eruda), via ?debug=1 ou 5 taps sur le numéro de version
+/js/erreurs.js          → capture window.onerror / unhandledrejection, consultable sur l'écran de debug
+/js/version.js          → APP_VERSION affiché en Profil, doit matcher le tag Git qui déclenche android.yml
 /js/sync.js             → client Supabase (phase 4+)
-/js/views/*.js          → un fichier par écran
+/js/views/*.js          → un fichier par écran (dont debug.js, overlay hors navigation normale)
 /data/gestes.json       → catalogue des gestes
 /icons/
+/docs/                  → assets non-code (capture d'écran utilisée par README.md)
+/audits/                → un audit daté par session d'audit
 /tests/*.test.js        → tests logiques, exécutables avec `node --test`
 /.github/workflows/     → tests.yml, android.yml
+/.github/gradle/        → gabarits Gradle (version, signature) réinjectés dans /android à chaque build CI
 /privacy.html           → politique de confidentialité (exigée par le Play Store)
 capacitor.config.json
+package.json            → dépendances Capacitor, sert uniquement à `npm install` en CI
 changelog.md            → en minuscules, c'est le nom réel du fichier
 CLAUDE.md
 ROADMAP.md

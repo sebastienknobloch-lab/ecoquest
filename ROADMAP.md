@@ -95,7 +95,7 @@ Rien de visible pour l'utilisateur. Tout le reste s'appuie dessus.
 
 Objectif : une app installable, buildée sans jamais ouvrir Android Studio.
 
-- [x] **S21** — *« Ajoute `capacitor.config.json` (appId `app.ecoquest`, appName EcoQuest, `webDir` à la racine) et le `package.json` minimal des dépendances Capacitor. Ces fichiers ne servent qu'à la CI, rien à installer chez moi. Ajoute `/android` au `.gitignore`. »*
+- [x] **S21** — *« Ajoute `capacitor.config.json` (appId `app.ecoquest`, appName EcoQuest, `webDir` à la racine) et le `package.json` minimal des dépendances Capacitor. Ces fichiers ne servent qu'à la CI, rien à installer chez moi. Ajoute `/android` au `.gitignore`. »* `webDir` et `appId` ont depuis été corrigés (voir changelog.md, 17/09 et 19/09) : `webDir` vaut `www`, `appId` vaut `com.version012.ecoquest`.
 - [x] **S22** — *« Crée `.github/workflows/android.yml` : sur tag `v*`, installer les dépendances, `npx cap add android`, builder un APK de debug non signé, le publier comme artifact du workflow. »*
 - [x] **S23** — Tag, télécharger l'APK depuis l'onglet Actions, l'installer. Noter tout ce qui casse dans la WebView.
 - [x] **S24** — *« Corrige : [ce que tu as vu]. »*
