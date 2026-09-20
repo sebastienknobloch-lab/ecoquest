@@ -1,4 +1,6 @@
-const CACHE_NAME = "ecoquest-shell-v21";
+import { doitMettreEnCache } from "./js/cache-policy.js";
+
+const CACHE_NAME = "ecoquest-shell-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -48,8 +50,10 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(event.request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          if (doitMettreEnCache(event.request.url, response, self.location.origin)) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          }
           return response;
         })
         .catch(() => caches.match("./index.html"));

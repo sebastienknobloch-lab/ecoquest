@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-20 — Correctif : le service worker mettait en cache les erreurs réseau et les ressources tierces
+
+- `sw.js` appliquait une stratégie cache-first à toute requête GET et mettait en cache la réponse quelle qu'elle soit (`sw.js:46, 49-53` avant correctif) : un 404 ou un 500 transitoire finissait dans le cache de l'app shell et y restait indéfiniment, jusqu'au prochain renommage de `CACHE_NAME`. Les réponses cross-origin (Eruda chargé depuis esm.sh / jsDelivr, `js/debug.js`) y entraient aussi.
+- La décision de mise en cache est isolée dans une nouvelle fonction pure `doitMettreEnCache()` (`js/cache-policy.js`, sans dépendance au scope Service Worker) : une réponse ne rejoint le cache que si elle est `ok` (2xx) **et** de même origine que l'app. `sw.js` l'importe et ne met plus en cache que ce qui passe ces deux garde-fous — la stratégie de l'app shell précaché (`cache.addAll` à l'install) est inchangée.
+- `sw.js` devient un module ES (`import` en tête) : `js/app.js` enregistre désormais le service worker avec `{ type: "module" }`.
+- `CACHE_NAME` renommé `ecoquest-shell-v22` pour propager le correctif aux appareils déjà installés.
+- Nouveau `tests/cache-policy.test.js` : même origine + `ok` → mis en cache ; même origine + 404/500 → jamais ; origine croisée (esm.sh, jsDelivr) même avec une réponse `ok` → jamais ; réponse absente ou URL invalide → jamais.
+
 ## 2026-09-20 — Correctif : APP_VERSION figée à 1.0.0, sans rapport avec le tag Git publié
 
 - `js/version.js` affichait `APP_VERSION = "1.0.0"` sur l'écran Profil et dans le déclencheur « 5 taps » de la console de debug, alors que le `versionName` réellement livré dans l'AAB vient du tag Git (`ECOQUEST_VERSION_NAME: ${{ github.ref_name }}` dans `.github/workflows/android.yml`). Le dernier tag publié était `v0.1.6` : aucun testeur ne pouvait faire correspondre ce qu'il voyait dans l'app à un build réel.
