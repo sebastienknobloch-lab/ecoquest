@@ -209,5 +209,14 @@ export function importerEtatJSON(texte) {
     onboarding: { ...ONBOARDING_PAR_DEFAUT, ...etatBrut.onboarding },
   };
 
+  // Migration douce (même règle qu'à loadState()) : une sauvegarde exportée
+  // avant l'existence de l'onboarding (sessions 14 à 18) n'a pas de champ
+  // `onboarding`. Un état déjà en cours d'usage (points > 0) a forcément
+  // passé un onboarding qui n'existait pas encore : on le marque terminé
+  // pour ne pas le ré-afficher à un utilisateur existant à l'import.
+  if (!etatBrut.onboarding && etat.points > 0) {
+    etat.onboarding.termine = true;
+  }
+
   return { valide: true, etat };
 }

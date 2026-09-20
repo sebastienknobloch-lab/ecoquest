@@ -115,4 +115,24 @@ function etatValide() {
   assert.equal(resultat.etat.points, etat.points);
 }
 
+// importerEtatJSON : migration douce — une sauvegarde sans `onboarding` mais
+// avec des points (export fait entre les sessions 14 et 18) est reconnue
+// comme un utilisateur déjà en cours d'usage : l'onboarding ne doit pas se
+// ré-afficher à l'import.
+{
+  const { onboarding, ...sansOnboarding } = etatValide();
+  const resultat = importerEtatJSON(JSON.stringify({ ...sansOnboarding, points: 30 }));
+  assert.equal(resultat.valide, true);
+  assert.equal(resultat.etat.onboarding.termine, true);
+}
+
+// importerEtatJSON : la même sauvegarde sans `onboarding` mais sans point
+// n'a pas forcément passé l'onboarding : il doit rester à faire.
+{
+  const { onboarding, ...sansOnboarding } = etatValide();
+  const resultat = importerEtatJSON(JSON.stringify({ ...sansOnboarding, points: 0 }));
+  assert.equal(resultat.valide, true);
+  assert.equal(resultat.etat.onboarding.termine, false);
+}
+
 console.log("✅ tests state export/import (sauvegarde manuelle) : OK");

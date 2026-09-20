@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-20 — Correctif : `importerEtatJSON()` n'appliquait pas la migration douce de l'onboarding
+
+- `importerEtatJSON()` (js/state.js) reconstruisait l'état importé sans la migration douce que `loadState()` applique depuis la session 18 : une sauvegarde exportée entre les sessions 14 et 18 (avant l'existence du champ `onboarding`) repartait avec `onboarding.termine: false` à l'import, et `js/app.js` renvoyait un utilisateur déjà actif (points, historique) vers l'onboarding au lancement suivant.
+- `importerEtatJSON()` applique désormais la même règle qu'à `loadState()` : si la sauvegarde ne contient pas d'objet `onboarding` et que `points > 0`, l'onboarding importé est marqué `termine: true`.
+- Deux cas ajoutés dans `tests/state-export-import.test.js` : import d'une sauvegarde sans `onboarding` avec `points > 0` → `onboarding.termine === true` ; le même import avec `points === 0` → `termine === false`.
+
 ## 2026-09-19 — Correctif : `versionCode` figé à 1 dans le gabarit Capacitor
 
 - Nouveau blocage à l'import de l'AAB dans Play Console : « Le code de version 1 a déjà été utilisé. Choisissez-en un autre. » Le gabarit Android généré par `npx cap add android` fixe `versionCode 1` / `versionName "1.0"` en dur dans `android/app/build.gradle` (jamais commité, régénéré à chaque build) — le premier upload accepté par Play Console (même abandonné ensuite à cause du blocage API 35/36) a définitivement « consommé » ce versionCode : Play Store exige un `versionCode` strictement croissant et jamais réutilisé sur toute l'histoire de l'app.
