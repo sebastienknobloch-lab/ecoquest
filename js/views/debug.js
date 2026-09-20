@@ -100,12 +100,31 @@ export function afficherEcranDebug() {
   exporterBtn.disabled = erreurs.length === 0;
   exporterBtn.addEventListener("click", () => exporterErreurs(state.erreurs || []));
 
+  // Sans Mac ni câble, il n'y a pas de console de développeur fiable pour
+  // provoquer une erreur JS à la main sur un téléphone (les erreurs tapées
+  // dans la console Eruda restent internes à Eruda, elles ne remontent pas à
+  // window.onerror). Ce bouton lève une vraie erreur non interceptée, dans
+  // un setTimeout pour qu'elle échappe au gestionnaire de clic et soit
+  // capturée comme n'importe quelle erreur réelle par js/erreurs.js.
+  const provoquerBtn = document.createElement("button");
+  provoquerBtn.type = "button";
+  provoquerBtn.textContent = "Provoquer une erreur de test";
+  provoquerBtn.addEventListener("click", () => {
+    setTimeout(() => {
+      throw new Error("Erreur de test provoquée depuis l'écran de debug");
+    }, 0);
+    // L'erreur est enregistrée de façon synchrone par window.onerror dès
+    // qu'elle survient : un léger délai suffit à la voir apparaître ici sans
+    // devoir fermer puis rouvrir l'écran à la main.
+    setTimeout(afficherEcranDebug, 50);
+  });
+
   const fermerBtn = document.createElement("button");
   fermerBtn.type = "button";
   fermerBtn.textContent = "Fermer";
   fermerBtn.addEventListener("click", fermerEcranDebug);
 
-  boutons.append(exporterBtn, fermerBtn);
+  boutons.append(exporterBtn, provoquerBtn, fermerBtn);
   entete.append(titre, boutons);
   overlay.append(entete);
 
