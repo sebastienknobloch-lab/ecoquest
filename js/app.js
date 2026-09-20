@@ -125,7 +125,7 @@ function initServiceWorker() {
   surveillerMiseAJourServiceWorker();
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("./sw.js")
+      .register("./sw.js", { type: "module" })
       .then((registration) => {
         verifierMiseAJourAuRetourPremierPlan(registration);
         setStatus(
