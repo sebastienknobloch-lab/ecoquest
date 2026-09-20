@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-20 — Correctif : « Exporter mes données » sans effet sur Android en PWA installée
+
+- Signalé par Sébastien : sur Android, avec l'app installée sur l'écran d'accueil (mode standalone), taper sur « Exporter mes données » en Profil ne déclenchait aucun téléchargement visible — le lien `<a download>` vers une blob: URL n'est pas fiable dans ce contexte de WebView, contrairement à un onglet Chrome classique.
+- `js/views/profil.js` : `exporterEtat()` tente désormais en priorité le partage natif (`navigator.share` avec un fichier), qui ouvre la feuille de partage du système et fonctionne dans une PWA installée — l'utilisateur peut alors enregistrer le fichier dans Fichiers, Drive, se l'envoyer par mail, etc. Le téléchargement classique (`<a download>`) reste utilisé en repli quand le partage de fichier n'est pas disponible (desktop, anciens navigateurs). Une annulation explicite du partage (bouton retour de la feuille système) n'enchaîne pas sur un téléchargement, pour ne pas surprendre l'utilisateur.
+- Si le téléchargement de repli échoue aussi, un message d'erreur s'affiche désormais dans le bloc Sauvegarde au lieu de rester silencieux.
+
 ## 2026-09-20 — Correctif : `importerEtatJSON()` n'appliquait pas la migration douce de l'onboarding
 
 - `importerEtatJSON()` (js/state.js) reconstruisait l'état importé sans la migration douce que `loadState()` applique depuis la session 18 : une sauvegarde exportée entre les sessions 14 et 18 (avant l'existence du champ `onboarding`) repartait avec `onboarding.termine: false` à l'import, et `js/app.js` renvoyait un utilisateur déjà actif (points, historique) vers l'onboarding au lancement suivant.
