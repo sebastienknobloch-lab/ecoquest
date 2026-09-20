@@ -6,7 +6,7 @@ import { renderProfil } from "./views/profil.js";
 import { renderOnboarding } from "./views/onboarding.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
-import { installerGestionnaireErreurs } from "./erreurs.js";
+import { installerGestionnaireErreurs, fusionnerErreursRecentes } from "./erreurs.js";
 
 const VUES = {
   aujourdhui: renderAujourdhui,
@@ -33,8 +33,15 @@ function isInstalled() {
   );
 }
 
+// Les vues (js/views/aujourdhui.js, js/views/onboarding.js) reçoivent l'état
+// une fois au montage et peuvent le persister bien plus tard à partir de
+// cette copie : sans fusion, une erreur ajoutée entre-temps par le
+// gestionnaire global (js/erreurs.js) serait écrasée dès le prochain
+// persist() de la vue, précisément au moment où on a le plus besoin de la
+// garder. `erreurs` est donc toujours reconstruit à partir de la version la
+// plus à jour plutôt que d'être pris tel quel dans nextState.
 function persist(nextState) {
-  state = nextState;
+  state = { ...nextState, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) };
   saveState(state);
 }
 

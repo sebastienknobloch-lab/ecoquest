@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-20 — Correctif : une erreur JS capturée pendant l'écran Aujourd'hui ou l'onboarding pouvait être effacée
+
+- `js/views/aujourdhui.js` et `js/views/onboarding.js` reçoivent l'état une seule fois, au montage, puis persistent leurs propres mises à jour à partir de cette copie figée. Pendant ce temps, le gestionnaire global d'erreurs (`js/erreurs.js`, installé par `js/app.js`) ajoute les erreurs JS capturées à l'état détenu par `app.js`. Résultat : une erreur survenue pendant que l'un de ces écrans était affiché était effacée dès que l'utilisateur cochait/décochait un geste, ou terminait l'onboarding — c'est-à-dire au moment où elle avait le plus de chances de se produire (interaction utilisateur juste après un plantage).
+- Corrigé côté `js/app.js` plutôt que dans chaque vue : `persist()` fusionne désormais le champ `erreurs` de l'état reçu avec celui, plus à jour, détenu par l'application, via la nouvelle fonction pure `fusionnerErreursRecentes()` (`js/erreurs.js`). `erreurs` ne fait jamais que grandir (ajout en fin de liste, éviction FIFO en tête) : la liste la plus longue est donc toujours la plus récente. Aucune vue n'a eu besoin d'être modifiée.
+- Nouveaux tests dans `tests/erreurs.test.js` : comportement de `fusionnerErreursRecentes()`, et scénario de régression complet (erreur ajoutée à l'état, puis geste coché à partir d'une copie antérieure → l'erreur reste présente dans l'état persisté).
+
 ## 2026-09-20 — Correctif : l'onboarding proposait des catégories figées, pas celles du catalogue
 
 - `js/views/onboarding.js` construisait l'écran de choix des 3 catégories prioritaires depuis `LIBELLES_CATEGORIES`, une constante importée de `js/views/aujourdhui.js` — alors que la correction du 13/09 (commit `4ecd458`) avait justement fait de `data/gestes.json` la seule source de vérité pour la liste des catégories. Une catégorie ajoutée ou retirée du catalogue n'était pas répercutée à l'onboarding, et un choix devenu invalide faisait silencieusement retomber `selectionDuJour()` sur le tirage aléatoire.

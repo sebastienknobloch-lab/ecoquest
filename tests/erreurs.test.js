@@ -4,8 +4,10 @@ import {
   ajouterErreur,
   formaterErreurWindow,
   formaterRejetNonGere,
+  fusionnerErreursRecentes,
   installerGestionnaireErreurs,
 } from "../js/erreurs.js";
+import { STREAK_PAR_DEFAUT, JOKER_PAR_DEFAUT, cocherGeste } from "../js/gamification.js";
 
 function etatVide() {
   return { erreurs: [] };
@@ -109,6 +111,60 @@ function etatVide() {
   assert.equal(state.erreurs[1].message, "promesse cassée");
 
   delete globalThis.window;
+}
+
+// fusionnerErreursRecentes : conserve la liste la plus longue, qu'elle
+// vienne de l'état actuel ou de l'état reçu (erreurs ne fait jamais que
+// grandir : ajout en fin de liste, éviction FIFO en tête)
+{
+  assert.deepEqual(fusionnerErreursRecentes(["a"], ["a", "b"]), ["a", "b"]);
+  assert.deepEqual(fusionnerErreursRecentes(["a", "b"], ["a"]), ["a", "b"]);
+  assert.deepEqual(fusionnerErreursRecentes(["a"], ["a"]), ["a"]);
+  assert.deepEqual(fusionnerErreursRecentes(undefined, ["a"]), ["a"]);
+  assert.deepEqual(fusionnerErreursRecentes(["a"], undefined), ["a"]);
+  assert.deepEqual(fusionnerErreursRecentes(undefined, undefined), []);
+}
+
+// Scénario de régression : une erreur ajoutée à l'état pendant qu'une vue
+// (js/views/aujourdhui.js, js/views/onboarding.js) détient encore une copie
+// antérieure ne doit pas être effacée quand cette vue persiste ensuite un
+// état calculé à partir de cette copie (ex. un geste coché). Reproduit ici
+// la logique de persist() dans js/app.js, qui fusionne `erreurs` avant
+// d'écraser l'état détenu par l'application.
+{
+  const etatInitial = {
+    points: 0,
+    gestesCochesParDate: {},
+    streak: STREAK_PAR_DEFAUT,
+    joker: JOKER_PAR_DEFAUT,
+    erreurs: [],
+  };
+
+  let state = etatInitial;
+  function persist(nextState) {
+    state = { ...nextState, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) };
+  }
+
+  // La vue capture une copie de l'état à son montage, avant toute erreur.
+  const copieVue = state;
+
+  // Une erreur JS survient pendant que la vue est affichée : le gestionnaire
+  // global (js/erreurs.js) l'ajoute à l'état courant détenu par app.js.
+  persist(ajouterErreur(state, { message: "boum" }));
+  assert.equal(state.erreurs.length, 1);
+
+  // L'utilisateur coche un geste : la vue calcule le nouvel état à partir de
+  // sa copie *antérieure* à l'erreur, puis le persiste.
+  const geste = { id: "g1", points: 10 };
+  const etatDepuisCopieAnterieure = cocherGeste(copieVue, geste, "2026-09-20");
+  persist(etatDepuisCopieAnterieure);
+
+  // L'erreur capturée entre-temps est toujours présente dans l'état
+  // enregistré, malgré la copie antérieure de la vue.
+  assert.equal(state.erreurs.length, 1);
+  assert.equal(state.erreurs[0].message, "boum");
+  // La fusion ne doit affecter que le champ erreurs : le geste coché reste pris en compte.
+  assert.equal(state.points, 10);
 }
 
 console.log("✅ tests erreurs (gestionnaire global d'erreurs JS) : OK");

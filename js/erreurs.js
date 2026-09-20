@@ -14,6 +14,21 @@ export function ajouterErreur(state, erreur) {
   return { ...state, erreurs };
 }
 
+// Fusionne le champ `erreurs` d'un état sur le point d'être persisté (voir
+// persist() dans js/app.js) avec celui de l'état actuellement détenu par
+// app.js. Nécessaire car une vue (js/views/aujourdhui.js,
+// js/views/onboarding.js) peut appeler persist() avec une copie de l'état
+// capturée avant son montage : sans fusion, elle écraserait une erreur
+// ajoutée entre-temps par le gestionnaire global. `erreurs` ne fait jamais
+// que grandir (ajout en fin de liste, éviction FIFO en tête) : la liste la
+// plus longue est donc toujours la plus récente, qu'elle vienne de l'état
+// actuel ou de l'état reçu.
+export function fusionnerErreursRecentes(erreursActuelles, erreursSuivantes) {
+  const actuelles = erreursActuelles || [];
+  const suivantes = erreursSuivantes || [];
+  return suivantes.length >= actuelles.length ? suivantes : actuelles;
+}
+
 export function formaterErreurWindow(message, source, ligne, colonne, erreurObjet) {
   return {
     type: "erreur",
