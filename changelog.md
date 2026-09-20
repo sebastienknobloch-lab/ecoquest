@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-20 — Correctif : la source complète s'affichait sous chaque geste, illisible sur mobile
+
+- `js/views/aujourdhui.js:163-165` affichait la chaîne `source` intégrale sous chaque geste, dans les 3 gestes du jour comme dans le catalogue complet. Depuis les corrections de sourçage des sessions 15 et 16, ces sources font en moyenne 126 caractères et jusqu'à 206 (`baisser-chauffage`) — contraire à l'exigence de `CLAUDE.md` de textes compréhensibles par un enfant de 10 ans, sur un écran de 360 px.
+- La ligne visible par défaut ne garde plus que le chiffre court (« ≈ N g CO2 évités (estimation) », ou « ordre de grandeur à confirmer » pour un geste `a_verifier`). La source complète (`geste.source`) est déplacée dans un `<details>`/`<summary>` replié (« D'où vient ce chiffre ? »), ajouté après le `<label>` de chaque geste plutôt qu'à l'intérieur, pour ne pas interférer avec le comportement de la case à cocher associée au `<label>`.
+- `data/gestes.json` inchangé : les sources restent intégrales dans les données, seul l'affichage change.
+- `css/app.css` : nouvelles règles `.geste-source*`, mêmes codes visuels que les autres replis (`.catalogue-complet-titre`, `.categorie-titre`) — `<summary>` avec cible tactile ≥ 44px, couleur `--eco-green-dark` (contraste 7,9:1 sur blanc) pour le résumé, `#6a6a6a` (5,4:1) pour le texte de la source une fois déplié.
+- `sw.js` : cache renommé `ecoquest-shell-v23` (`js/views/aujourdhui.js` et `css/app.css` font partie de l'app shell précaché).
+
 ## 2026-09-20 — Correctif : le service worker mettait en cache les erreurs réseau et les ressources tierces
 
 - `sw.js` appliquait une stratégie cache-first à toute requête GET et mettait en cache la réponse quelle qu'elle soit (`sw.js:46, 49-53` avant correctif) : un 404 ou un 500 transitoire finissait dans le cache de l'app shell et y restait indéfiniment, jusqu'au prochain renommage de `CACHE_NAME`. Les réponses cross-origin (Eruda chargé depuis esm.sh / jsDelivr, `js/debug.js`) y entraient aussi.

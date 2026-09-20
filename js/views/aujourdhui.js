@@ -161,12 +161,29 @@ export function renderAujourdhui(container, initialState, persist) {
 
     const detail = document.createElement("small");
     detail.textContent = geste.a_verifier
-      ? `ordre de grandeur à confirmer — ${geste.source}`
-      : `≈ ${geste.co2_evite_g} g CO2 évités (estimation) — ${geste.source}`;
+      ? "ordre de grandeur à confirmer"
+      : `≈ ${geste.co2_evite_g} g CO2 évités (estimation)`;
 
     texte.append(titre, detail);
     label.append(checkbox, texte);
     li.append(label);
+
+    // Source complète repliée : le chiffre reste sourcable sans s'imposer à
+    // la lecture (texte compréhensible par un enfant de 10 ans, écran 360px).
+    const sourceDetails = document.createElement("details");
+    sourceDetails.className = "geste-source";
+
+    const sourceSummary = document.createElement("summary");
+    sourceSummary.className = "geste-source-titre";
+    sourceSummary.textContent = "D'où vient ce chiffre ?";
+
+    const sourceTexte = document.createElement("p");
+    sourceTexte.className = "geste-source-texte";
+    sourceTexte.textContent = geste.source;
+
+    sourceDetails.append(sourceSummary, sourceTexte);
+    li.append(sourceDetails);
+
     return li;
   }
 
