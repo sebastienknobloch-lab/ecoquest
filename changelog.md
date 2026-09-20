@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-20 — Correctif : APP_VERSION figée à 1.0.0, sans rapport avec le tag Git publié
+
+- `js/version.js` affichait `APP_VERSION = "1.0.0"` sur l'écran Profil et dans le déclencheur « 5 taps » de la console de debug, alors que le `versionName` réellement livré dans l'AAB vient du tag Git (`ECOQUEST_VERSION_NAME: ${{ github.ref_name }}` dans `.github/workflows/android.yml`). Le dernier tag publié était `v0.1.6` : aucun testeur ne pouvait faire correspondre ce qu'il voyait dans l'app à un build réel.
+- `js/version.js` passe à `"0.1.6"`, alignée sur le dernier tag. La contrainte zéro build interdisant toute génération automatique de ce fichier, il reste mis à jour à la main — mais désormais dans le même commit que le tag qui déclenche le build (commentaire ajouté dans le fichier pour ne pas l'oublier).
+- Garde-fou côté CI : nouvelle étape « Vérifier que APP_VERSION correspond au tag » en tout début de `.github/workflows/android.yml`, avant même `npm install`. Elle compare `APP_VERSION` (lu dans `js/version.js`) au tag qui a déclenché le workflow (`github.ref_name`, préfixe `v` retiré) et fait échouer le build immédiatement en cas de divergence — impossible désormais de publier un AAB dont le numéro de version affiché ne correspond pas au tag qui l'a produit.
+
 ## 2026-09-20 — Correctif : une erreur JS capturée pendant l'écran Aujourd'hui ou l'onboarding pouvait être effacée
 
 - `js/views/aujourdhui.js` et `js/views/onboarding.js` reçoivent l'état une seule fois, au montage, puis persistent leurs propres mises à jour à partir de cette copie figée. Pendant ce temps, le gestionnaire global d'erreurs (`js/erreurs.js`, installé par `js/app.js`) ajoute les erreurs JS capturées à l'état détenu par `app.js`. Résultat : une erreur survenue pendant que l'un de ces écrans était affiché était effacée dès que l'utilisateur cochait/décochait un geste, ou terminait l'onboarding — c'est-à-dire au moment où elle avait le plus de chances de se produire (interaction utilisateur juste après un plantage).
