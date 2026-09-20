@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-20 — Correctif : l'onboarding proposait des catégories figées, pas celles du catalogue
+
+- `js/views/onboarding.js` construisait l'écran de choix des 3 catégories prioritaires depuis `LIBELLES_CATEGORIES`, une constante importée de `js/views/aujourdhui.js` — alors que la correction du 13/09 (commit `4ecd458`) avait justement fait de `data/gestes.json` la seule source de vérité pour la liste des catégories. Une catégorie ajoutée ou retirée du catalogue n'était pas répercutée à l'onboarding, et un choix devenu invalide faisait silencieusement retomber `selectionDuJour()` sur le tirage aléatoire.
+- `renderOnboarding` charge désormais `data/gestes.json` et dérive la liste des catégories des données via la nouvelle fonction pure `deriverCategories()`, exportée et isolée du DOM — même logique que `afficherCatalogueComplet` dans `js/views/aujourdhui.js` (ordre de première apparition, sans doublon). `LIBELLES_CATEGORIES` ne sert plus qu'à l'habillage (emoji + libellé), avec repli sur l'identifiant brut pour une catégorie inconnue.
+- Le chargement démarre dès l'affichage de l'onboarding (en parallèle de l'étape prénom). L'étape catégories gère l'attente (« Chargement des catégories… ») et l'échec (message clair + bouton « Réessayer »), toujours avec le bouton « Précédent » disponible — jamais d'écran vide sans bouton.
+- `state.onboarding` inchangé. Nouveau `tests/onboarding.test.js` pour `deriverCategories()` : ordre/dédoublonnage sur le vrai catalogue, suivi d'une catégorie ajoutée/retirée sur un catalogue fictif, catalogue vide.
+
 ## 2026-09-20 — Correctif : « Exporter mes données » sans effet sur Android en PWA installée
 
 - Signalé par Sébastien : sur Android, avec l'app installée sur l'écran d'accueil (mode standalone), taper sur « Exporter mes données » en Profil ne déclenchait aucun téléchargement visible — le lien `<a download>` vers une blob: URL n'est pas fiable dans ce contexte de WebView, contrairement à un onglet Chrome classique.
