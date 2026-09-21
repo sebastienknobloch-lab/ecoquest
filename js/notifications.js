@@ -1,10 +1,11 @@
 // Rappel quotidien local (session 29 — voir CLAUDE.md : « le rappel quotidien
 // est le cœur du produit, pas un accessoire »).
 //
-// La demande de permission et le contenu variable du rappel arrivent en
-// sessions 30 et 31 : ce module ne fait que programmer/annuler un rappel
-// générique à l'heure choisie (`state.onboarding.heureRappel`), et exposer
-// le calcul de sa prochaine échéance.
+// Le contenu variable du rappel arrive en session 31 : ce module programme/
+// annule un rappel générique à l'heure choisie (`state.onboarding.heureRappel`),
+// expose le calcul de sa prochaine échéance, et gère la demande d'autorisation
+// (session 30 — voir CLAUDE.md : jamais au premier lancement, seulement après
+// la première validation de geste, un seul essai par utilisateur).
 //
 // `@capacitor/local-notifications` est chargé en module ES depuis un CDN
 // (deux essais, comme `js/debug.js` pour Eruda) : indisponible dans un
@@ -12,6 +13,7 @@
 // empaquetée par Capacitor (voir CLAUDE.md, coquille Android). Toute
 // fonction de programmation devient alors un no-op silencieux plutôt
 // qu'une erreur.
+import { totalGestesValides } from "./gamification.js";
 const LOCAL_NOTIFICATIONS_MODULE_URLS = [
   "https://esm.sh/@capacitor/local-notifications@8",
   "https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@8/+esm",
@@ -109,6 +111,32 @@ export async function programmerRappelQuotidien(heureRappel, contenu = CONTENU_R
       ],
     });
     return true;
+  } catch {
+    return false;
+  }
+}
+
+// --- Demande d'autorisation (session 30) ---
+//
+// Fonction pure (aucun accès à Capacitor ni au DOM) qui décide si l'écran de
+// demande doit apparaître : jamais au premier lancement (il faut au moins un
+// geste validé, toutes dates confondues), et jamais une deuxième fois — que
+// l'utilisateur ait accepté ou refusé la première fois.
+export function doitProposerPermission(state) {
+  if (state.notifications?.permissionDemandee) return false;
+  return totalGestesValides(state) >= 1;
+}
+
+// Demande l'autorisation au système d'exploitation. Plugin indisponible
+// (navigateur de développement) : traité comme un refus plutôt qu'une
+// erreur, cohérent avec le reste du module.
+export async function demanderPermissionNotifications() {
+  const LocalNotifications = await chargerPlugin();
+  if (!LocalNotifications) return false;
+
+  try {
+    const resultat = await LocalNotifications.requestPermissions();
+    return resultat?.display === "granted";
   } catch {
     return false;
   }

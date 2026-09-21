@@ -11,6 +11,15 @@ export const ONBOARDING_PAR_DEFAUT = {
   heureRappel: "19:00",
 };
 
+// permissionDemandee : vrai dès que l'écran de demande d'autorisation
+// (session 30) a été présenté une fois, qu'il ait été accepté ou refusé — un
+// seul essai par utilisateur (voir CLAUDE.md), jamais redemandé ensuite.
+// permissionAccordee : null tant que pas encore demandée, sinon le résultat.
+export const NOTIFICATIONS_PAR_DEFAUT = {
+  permissionDemandee: false,
+  permissionAccordee: null,
+};
+
 // Toute nouvelle propriété doit avoir une valeur par défaut ici
 // (migration douce : les données existantes ne sont jamais perdues).
 const DEFAULT_STATE = {
@@ -21,6 +30,7 @@ const DEFAULT_STATE = {
   joker: JOKER_PAR_DEFAUT,
   erreurs: [],
   onboarding: ONBOARDING_PAR_DEFAUT,
+  notifications: NOTIFICATIONS_PAR_DEFAUT,
 };
 
 // Format AAAA-MM-JJ en heure locale (pas d'UTC, pour que "minuit" corresponde
@@ -78,6 +88,9 @@ export function loadState() {
     if (!parsed.onboarding && state.points > 0) {
       state.onboarding.termine = true;
     }
+
+    // Migration douce : `notifications` n'existait pas avant cette version.
+    state.notifications = { ...NOTIFICATIONS_PAR_DEFAUT, ...(parsed.notifications || {}) };
 
     return state;
   } catch {
@@ -160,6 +173,14 @@ function estOnboardingValide(valeur) {
   );
 }
 
+function estNotificationsValide(valeur) {
+  return (
+    estObjetSimple(valeur) &&
+    typeof valeur.permissionDemandee === "boolean" &&
+    (valeur.permissionAccordee === null || typeof valeur.permissionAccordee === "boolean")
+  );
+}
+
 // Valide la structure minimale attendue d'un état EcoQuest (sans dépendre du
 // catalogue de gestes, indisponible à l'import). Volontairement stricte sur
 // les types pour ne jamais laisser une donnée corrompue écraser l'état actuel.
@@ -174,7 +195,8 @@ export function validerEtat(etat) {
     estStreakValide(etat.streak) &&
     estJokerValide(etat.joker) &&
     (etat.erreurs === undefined || Array.isArray(etat.erreurs)) &&
-    (etat.onboarding === undefined || estOnboardingValide(etat.onboarding))
+    (etat.onboarding === undefined || estOnboardingValide(etat.onboarding)) &&
+    (etat.notifications === undefined || estNotificationsValide(etat.notifications))
   );
 }
 
@@ -207,6 +229,7 @@ export function importerEtatJSON(texte) {
     joker: { ...JOKER_PAR_DEFAUT, ...etatBrut.joker },
     erreurs: Array.isArray(etatBrut.erreurs) ? etatBrut.erreurs : [],
     onboarding: { ...ONBOARDING_PAR_DEFAUT, ...etatBrut.onboarding },
+    notifications: { ...NOTIFICATIONS_PAR_DEFAUT, ...etatBrut.notifications },
   };
 
   // Migration douce (même règle qu'à loadState()) : une sauvegarde exportée

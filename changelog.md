@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-21 — Session 30 : écran de demande d'autorisation notifications
+
+- Nouveau `js/views/permission-notifications.js` : écran plein cadre affiché une seule fois par utilisateur, qui explique la valeur en une phrase (« un seul rappel par jour, avec ton geste du jour dedans ») et propose « Activer les rappels » / « Non merci ». Jamais au premier lancement : voir `doitProposerPermission()` dans `js/notifications.js`, qui ne devient vrai qu'à partir du tout premier geste validé (`totalGestesValides`, désormais exporté par `js/gamification.js`) et tant que la permission n'a encore jamais été demandée.
+- `state.notifications = { permissionDemandee, permissionAccordee }` dans `js/state.js`, avec migration douce (valeurs par défaut pour tout état antérieur à cette session), validation (`estNotificationsValide`) et prise en charge dans l'export/import manuel — même traitement que `state.onboarding`.
+- `js/notifications.js` expose aussi `demanderPermissionNotifications()` : appelle `LocalNotifications.requestPermissions()`, plugin indisponible (navigateur de développement) traité comme un refus plutôt qu'une erreur.
+- `js/app.js` : l'écran remplace `#view-root` et masque la tab-bar (même traitement que l'onboarding) dès que `doitProposerPermission(state)` devient vrai après un `persist()` déclenché depuis une vue à onglets (`persisterDepuisVue`), qu'il s'agisse d'accepter ou de refuser — `permissionDemandee` passe à `true` dans les deux cas et l'écran ne réapparaît plus jamais, y compris après un refus (un seul essai par utilisateur, voir `CLAUDE.md`).
+- `sw.js` : `js/notifications.js` (désormais importé statiquement par `js/app.js`) et `js/views/permission-notifications.js` ajoutés à l'app shell précaché, jusque-là absent par erreur depuis la session 29. Cache renommé `ecoquest-shell-v24`.
+- Nouveaux tests : `doitProposerPermission()` (aucun geste jamais validé, premier geste validé, déjà demandée — acceptée ou refusée — état ancien sans champ `notifications`) dans `tests/notifications.test.js` ; migration et validation de `state.notifications` dans `tests/state.test.js` et `tests/state-export-import.test.js`.
+- Testé au clavier/souris en résolution mobile (390×844) : onboarding → aucun écran de permission ; premier geste coché → écran affiché, tab-bar masquée ; refus → retour à Aujourd'hui, tab-bar visible, `permissionDemandee: true` ; second geste coché après rechargement → écran non réaffiché.
+
 ## 2026-09-21 — Session 29 : `js/notifications.js`, programmation du rappel quotidien
 
 - Nouveau `js/notifications.js` : programmation/annulation du rappel local quotidien via `@capacitor/local-notifications`, chargé en module ES depuis un CDN (esm.sh puis jsDelivr en repli, même schéma que `js/debug.js` pour Eruda) — indisponible dans un navigateur de développement classique, sans erreur (no-op silencieux).

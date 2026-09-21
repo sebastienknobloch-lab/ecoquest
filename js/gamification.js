@@ -290,7 +290,7 @@ export const BADGES = [
 
 // Nombre total de gestes validés, toutes dates confondues (un même geste
 // coché à des dates différentes compte à chaque fois).
-function totalGestesValides(state) {
+export function totalGestesValides(state) {
   return Object.values(state.gestesCochesParDate || {}).reduce((total, ids) => total + ids.length, 0);
 }
 

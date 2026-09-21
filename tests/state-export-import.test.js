@@ -13,6 +13,7 @@ function etatValide() {
     joker: { disponible: 1, semaine: "2026-W01", dejaUtilise: false },
     erreurs: [],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "19:00" },
+    notifications: { permissionDemandee: true, permissionAccordee: true },
   };
 }
 
@@ -80,6 +81,18 @@ function etatValide() {
   assert.equal(validerEtat(sansOnboarding), true);
 }
 
+// validerEtat : rejette des notifications mal formées, mais accepte leur
+// absence (exports faits avant l'ajout de l'écran de demande, session 30)
+{
+  assert.equal(validerEtat({ ...etatValide(), notifications: { permissionDemandee: "oui" } }), false);
+  assert.equal(
+    validerEtat({ ...etatValide(), notifications: { permissionDemandee: true, permissionAccordee: "oui" } }),
+    false
+  );
+  const { notifications, ...sansNotifications } = etatValide();
+  assert.equal(validerEtat(sansNotifications), true);
+}
+
 // importerEtatJSON : JSON syntaxiquement invalide → rejeté avec un message, sans exception
 {
   const resultat = importerEtatJSON("{ceci n'est pas du json");
@@ -105,6 +118,7 @@ function etatValide() {
   assert.deepEqual(resultat.etat.streak, etat.streak);
   assert.deepEqual(resultat.etat.joker, etat.joker);
   assert.deepEqual(resultat.etat.onboarding, etat.onboarding);
+  assert.deepEqual(resultat.etat.notifications, etat.notifications);
 }
 
 // importerEtatJSON : accepte aussi un état brut, sans enveloppe
@@ -133,6 +147,16 @@ function etatValide() {
   const resultat = importerEtatJSON(JSON.stringify({ ...sansOnboarding, points: 0 }));
   assert.equal(resultat.valide, true);
   assert.equal(resultat.etat.onboarding.termine, false);
+}
+
+// importerEtatJSON : migration douce — une sauvegarde sans `notifications`
+// (export fait avant la session 30) reçoit les valeurs par défaut, jamais demandée
+{
+  const { notifications, ...sansNotifications } = etatValide();
+  const resultat = importerEtatJSON(JSON.stringify(sansNotifications));
+  assert.equal(resultat.valide, true);
+  assert.equal(resultat.etat.notifications.permissionDemandee, false);
+  assert.equal(resultat.etat.notifications.permissionAccordee, null);
 }
 
 console.log("✅ tests state export/import (sauvegarde manuelle) : OK");

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { parserHeure, calculerProchaineEcheance } from "../js/notifications.js";
+import { parserHeure, calculerProchaineEcheance, doitProposerPermission } from "../js/notifications.js";
 
 // parserHeure : découpe "HH:MM" en heure/minute numériques
 {
@@ -61,6 +61,46 @@ import { parserHeure, calculerProchaineEcheance } from "../js/notifications.js";
   assert.equal(echeanceAvant.getDate(), 20);
   assert.equal(echeanceApres.getDate(), 21);
   assert.equal(echeanceApres.getHours(), 8);
+}
+
+// doitProposerPermission : jamais au premier lancement, aucun geste encore validé
+{
+  const etat = { gestesCochesParDate: {}, notifications: { permissionDemandee: false, permissionAccordee: null } };
+  assert.equal(doitProposerPermission(etat), false);
+}
+
+// doitProposerPermission : dès le premier geste validé, si jamais encore proposée
+{
+  const etat = {
+    gestesCochesParDate: { "2026-09-20": ["geste-a"] },
+    notifications: { permissionDemandee: false, permissionAccordee: null },
+  };
+  assert.equal(doitProposerPermission(etat), true);
+}
+
+// doitProposerPermission : déjà proposée une fois (acceptée) -> ne redemande jamais
+{
+  const etat = {
+    gestesCochesParDate: { "2026-09-20": ["geste-a"] },
+    notifications: { permissionDemandee: true, permissionAccordee: true },
+  };
+  assert.equal(doitProposerPermission(etat), false);
+}
+
+// doitProposerPermission : déjà proposée une fois (refusée) -> ne redemande jamais non plus
+{
+  const etat = {
+    gestesCochesParDate: { "2026-09-20": ["geste-a"] },
+    notifications: { permissionDemandee: true, permissionAccordee: false },
+  };
+  assert.equal(doitProposerPermission(etat), false);
+}
+
+// doitProposerPermission : `notifications` absent (état ancien avant migration) -> traité
+// comme jamais demandé, ne plante pas
+{
+  const etat = { gestesCochesParDate: { "2026-09-20": ["geste-a"] } };
+  assert.equal(doitProposerPermission(etat), true);
 }
 
 console.log("✅ tests notifications : OK");
