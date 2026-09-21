@@ -4,6 +4,8 @@ import { renderDefis } from "./views/defis.js";
 import { renderFoyer } from "./views/foyer.js";
 import { renderProfil } from "./views/profil.js";
 import { renderOnboarding } from "./views/onboarding.js";
+import { renderPermissionNotifications } from "./views/permission-notifications.js";
+import { doitProposerPermission } from "./notifications.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
 import { installerGestionnaireErreurs, fusionnerErreursRecentes } from "./erreurs.js";
@@ -45,6 +47,30 @@ function persist(nextState) {
   saveState(state);
 }
 
+// Si l'écran de demande d'autorisation notifications (session 30) doit
+// apparaître, le montage remplace tout #view-root et masque la tab-bar,
+// exactement comme l'onboarding. Renvoie vrai si l'écran a été montré, pour
+// que l'appelant sache qu'il ne doit rien afficher d'autre par-dessus.
+function afficherPermissionSiNecessaire() {
+  if (!doitProposerPermission(state)) return false;
+  if (tabBar) tabBar.hidden = true;
+  renderPermissionNotifications(viewRoot, state, (nouvelEtat) => {
+    persist(nouvelEtat);
+    afficherApp();
+  });
+  return true;
+}
+
+// Callback donné aux vues à onglets (Aujourd'hui, Défis, Foyer, Profil) : en
+// plus de sauvegarder, vérifie après chaque changement d'état si l'écran de
+// demande doit apparaître. Si oui, il remplace le contenu de #view-root :
+// les mises à jour DOM que la vue appelante ferait ensuite sur ses propres
+// éléments (déjà détachés) restent sans effet visible, sans erreur.
+function persisterDepuisVue(nextState) {
+  persist(nextState);
+  afficherPermissionSiNecessaire();
+}
+
 function mettreAJourOngletActif() {
   tabButtons.forEach((btn) => {
     const actif = btn.dataset.tab === state.activeTab;
@@ -56,7 +82,7 @@ function mettreAJourOngletActif() {
 function afficherVueActive() {
   if (!viewRoot) return;
   const vue = VUES[state.activeTab] || VUES.aujourdhui;
-  vue(viewRoot, state, persist);
+  vue(viewRoot, state, persisterDepuisVue);
   mettreAJourOngletActif();
 }
 
@@ -65,6 +91,7 @@ function afficherVueActive() {
 // migration douce dans js/state.js pour les utilisateurs déjà en cours d'usage).
 function afficherApp() {
   if (tabBar) tabBar.hidden = false;
+  if (afficherPermissionSiNecessaire()) return;
   afficherVueActive();
 }
 

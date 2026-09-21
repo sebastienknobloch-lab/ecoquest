@@ -41,13 +41,16 @@ function etatParDefautAttendu() {
     joker: JOKER_PAR_DEFAUT,
     erreurs: [],
     onboarding: ONBOARDING_PAR_DEFAUT,
+    notifications: NOTIFICATIONS_PAR_DEFAUT,
   };
 }
 
 // Faux localStorage installé sur globalThis avant d'importer js/state.js.
 globalThis.localStorage = creerLocalStorageFactice();
 
-const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT } = await import("../js/state.js");
+const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT, NOTIFICATIONS_PAR_DEFAUT } = await import(
+  "../js/state.js"
+);
 
 // Stockage vide → état par défaut complet
 {
@@ -162,6 +165,7 @@ const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT } = await import
       { type: "erreur", message: "boom", source: "app.js", ligne: 1, colonne: 2, pile: null, horodatage: "2026-05-01T10:00:00.000Z" },
     ],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "20:30" },
+    notifications: { permissionDemandee: true, permissionAccordee: true },
   };
   saveState(etatOriginal);
   const etatRelu = loadState();
@@ -205,6 +209,31 @@ const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT } = await import
   assert.equal(etat.onboarding.prenom, "Sam");
   assert.deepEqual(etat.onboarding.categoriesPrioritaires, []);
   assert.equal(etat.onboarding.heureRappel, "19:00");
+}
+
+// État ancien sans `notifications` (avant cette version) : valeurs par
+// défaut, jamais demandée
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({ points: 10, gestesCochesParDate: {} }),
+  });
+  const etat = loadState();
+  assert.deepEqual(etat.notifications, NOTIFICATIONS_PAR_DEFAUT);
+}
+
+// État avec notifications partiel : les champs manquants sont complétés, les
+// champs présents ne sont pas écrasés
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({
+      points: 0,
+      gestesCochesParDate: {},
+      notifications: { permissionDemandee: true },
+    }),
+  });
+  const etat = loadState();
+  assert.equal(etat.notifications.permissionDemandee, true);
+  assert.equal(etat.notifications.permissionAccordee, null);
 }
 
 console.log("✅ tests state (localStorage/migrations) : OK");
