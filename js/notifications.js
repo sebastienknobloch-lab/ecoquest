@@ -13,7 +13,7 @@
 // empaquetée par Capacitor (voir CLAUDE.md, coquille Android). Toute
 // fonction de programmation devient alors un no-op silencieux plutôt
 // qu'une erreur.
-import { totalGestesValides } from "./gamification.js";
+import { totalGestesValides, selectionDuJour } from "./gamification.js";
 const LOCAL_NOTIFICATIONS_MODULE_URLS = [
   "https://esm.sh/@capacitor/local-notifications@8",
   "https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@8/+esm",
@@ -140,4 +140,74 @@ export async function demanderPermissionNotifications() {
   } catch {
     return false;
   }
+}
+
+// --- Contenu variable du rappel (session 31) ---
+//
+// CONTENU_RAPPEL_PAR_DEFAUT ci-dessus ne sert plus que de repli technique
+// (plugin indisponible avant tout chargement des gestes). Le rappel
+// réellement programmé (branchement en session 32) doit toujours citer le
+// geste du jour et son bénéfice concret — jamais un texte générique (voir
+// CLAUDE.md, économie de la permission notification). Les 10 variantes
+// ci-dessous ne changent que la formulation : le fond (quel geste, quel
+// chiffre) reste le même pour un jour donné, `geste.co2_evite_g` étant la
+// même donnée déjà affichée sur l'écran Aujourd'hui.
+const VARIANTES_CONTENU_RAPPEL = [
+  (g) => ({
+    title: "Ton geste du jour",
+    body: `${g.libelle} : environ ${g.co2_evite_g} g de CO2 évités (estimation).`,
+  }),
+  (g) => ({
+    title: "🌱 3 minutes pour la planète",
+    body: `${g.libelle}. Ça évite environ ${g.co2_evite_g} g de CO2 (estimation).`,
+  }),
+  (g) => ({
+    title: "Petit geste, vrai effet",
+    body: `${g.libelle} → ≈ ${g.co2_evite_g} g de CO2 en moins (estimation).`,
+  }),
+  (g) => ({
+    title: "EcoQuest",
+    body: `Un geste simple t'attend : ${g.libelle}. Environ ${g.co2_evite_g} g de CO2 évités (estimation).`,
+  }),
+  (g) => ({
+    title: "Ça compte aujourd'hui",
+    body: `${g.libelle}, et ${g.co2_evite_g} g de CO2 évités en prime (estimation).`,
+  }),
+  (g) => ({
+    title: "Prêt pour ton geste ?",
+    body: `${g.libelle} — ≈ ${g.co2_evite_g} g de CO2 évités si tu t'y mets (estimation).`,
+  }),
+  (g) => ({
+    title: "Un vrai chiffre",
+    body: `${g.libelle} : ça évite environ ${g.co2_evite_g} g de CO2 (estimation), pas juste une bonne intention.`,
+  }),
+  (g) => ({
+    title: "Effet immédiat",
+    body: `À la clé aujourd'hui : ${g.libelle}, ≈ ${g.co2_evite_g} g de CO2 évités (estimation).`,
+  }),
+  (g) => ({
+    title: "🌍 Ça t'attend",
+    body: `${g.libelle}. Un chiffre concret : environ ${g.co2_evite_g} g de CO2 évités (estimation).`,
+  }),
+  (g) => ({
+    title: "On y va ?",
+    body: `${g.libelle} — environ ${g.co2_evite_g} g de CO2 en moins rien qu'avec ce geste (estimation).`,
+  }),
+];
+
+// Tire une des 10 variantes au sort pour le geste donné. `alea` injectable
+// (comme `maintenant` pour calculerProchaineEcheance ci-dessus) : Math.random
+// par défaut, une fonction déterministe dans les tests.
+export function genererContenuRappel(geste, alea = Math.random) {
+  const index = Math.floor(alea() * VARIANTES_CONTENU_RAPPEL.length);
+  return VARIANTES_CONTENU_RAPPEL[index](geste);
+}
+
+// Le geste à citer dans le rappel du jour : le premier des 3 gestes du jour
+// (même sélection déterministe que l'écran Aujourd'hui, `selectionDuJour`),
+// pour ne jamais citer un geste différent de ceux que l'utilisateur voit en
+// ouvrant l'app.
+export function gesteDuRappel(gestes, dateISO, categoriesPrioritaires = []) {
+  const [geste] = selectionDuJour(gestes, dateISO, categoriesPrioritaires);
+  return geste;
 }

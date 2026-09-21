@@ -108,7 +108,7 @@ Objectif : une app installable, buildée sans jamais ouvrir Android Studio.
 
 - [x] **S29** — *« Crée `js/notifications.js` : rappel local quotidien à l'heure choisie, via `@capacitor/local-notifications`. Annulation propre, reprogrammation au changement d'heure. Tests sur le calcul de la prochaine échéance. »*
 - [x] **S30** — *« La demande d'autorisation n'apparaît qu'après la première validation de geste, dans un écran qui explique la valeur en une phrase. Jamais au premier lancement. Si l'utilisateur refuse, ne jamais redemander. »*
-- [ ] **S31** — *« Le contenu de la notification cite le geste du jour et son bénéfice concret, jamais un rappel générique. Écris 10 variantes, tire au sort. »*
+- [x] **S31** — *« Le contenu de la notification cite le geste du jour et son bénéfice concret, jamais un rappel générique. Écris 10 variantes, tire au sort. »*
 - [ ] **S32** — *« Réglages de notification sur l'écran Profil : activer/désactiver, changer l'heure, en deux taps maximum. »*
 - [ ] **S33** — *« Ouverture depuis une notification : l'enregistrer dans l'état et afficher directement le geste du jour. »*
 - [ ] **S34** — *« Sur l'écran de debug : notifications envoyées, ouvertes depuis notification, taux d'action sur 7 et 30 jours. Mon tableau de bord, pas celui de l'utilisateur. »*
