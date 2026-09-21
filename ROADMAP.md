@@ -106,7 +106,7 @@ Objectif : une app installable, buildée sans jamais ouvrir Android Studio.
 
 ### Phase 3 — Notifications, le cœur du produit (S29–S38)
 
-- [ ] **S29** — *« Crée `js/notifications.js` : rappel local quotidien à l'heure choisie, via `@capacitor/local-notifications`. Annulation propre, reprogrammation au changement d'heure. Tests sur le calcul de la prochaine échéance. »*
+- [x] **S29** — *« Crée `js/notifications.js` : rappel local quotidien à l'heure choisie, via `@capacitor/local-notifications`. Annulation propre, reprogrammation au changement d'heure. Tests sur le calcul de la prochaine échéance. »*
 - [ ] **S30** — *« La demande d'autorisation n'apparaît qu'après la première validation de geste, dans un écran qui explique la valeur en une phrase. Jamais au premier lancement. Si l'utilisateur refuse, ne jamais redemander. »*
 - [ ] **S31** — *« Le contenu de la notification cite le geste du jour et son bénéfice concret, jamais un rappel générique. Écris 10 variantes, tire au sort. »*
 - [ ] **S32** — *« Réglages de notification sur l'écran Profil : activer/désactiver, changer l'heure, en deux taps maximum. »*

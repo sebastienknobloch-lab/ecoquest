@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-21 — Session 29 : `js/notifications.js`, programmation du rappel quotidien
+
+- Nouveau `js/notifications.js` : programmation/annulation du rappel local quotidien via `@capacitor/local-notifications`, chargé en module ES depuis un CDN (esm.sh puis jsDelivr en repli, même schéma que `js/debug.js` pour Eruda) — indisponible dans un navigateur de développement classique, sans erreur (no-op silencieux).
+- `calculerProchaineEcheance(heureRappel, maintenant)` : fonction pure qui calcule le prochain instant où le rappel doit sonner à partir de `state.onboarding.heureRappel` ("HH:MM") — aujourd'hui si l'heure n'est pas encore passée, demain sinon. C'est elle qui rend le module testable sans dépendre du plugin natif.
+- `programmerRappelQuotidien()` s'appuie sur `schedule.on: { hour, minute }` + `repeats: true` plutôt que sur un `at` unique reprogrammé à chaque ouverture de l'app : la récurrence quotidienne est déléguée au système, robuste même si l'app reste fermée plusieurs jours. Toujours précédée d'une annulation explicite (`annulerRappelQuotidien()`, id fixe) : une reprogrammation (changement d'heure en Profil, session 32) ne laisse jamais deux rappels programmés.
+- `@capacitor/local-notifications` ajouté aux dépendances de `package.json` (`^8.3.1`, aligné sur `@capacitor/core` déjà en v8) pour que `npx cap sync android` embarque le plugin natif dans le build Android (`.github/workflows/android.yml`).
+- Pas encore branché à l'app (`js/app.js`) : la demande de permission (session 30) et le contenu variable du rappel (session 31) arrivent avant. `data/gestes.json`, `state.js` et l'onboarding sont inchangés.
+- Nouveau `tests/notifications.test.js` : `parserHeure()`, et `calculerProchaineEcheance()` sur les cas heure pas encore passée / déjà passée / pile à l'heure / changement de mois / changement d'année / reprogrammation à une heure plus tôt le même jour.
+
 ## 2026-09-20 — Correctif : la source complète s'affichait sous chaque geste, illisible sur mobile
 
 - `js/views/aujourdhui.js:163-165` affichait la chaîne `source` intégrale sous chaque geste, dans les 3 gestes du jour comme dans le catalogue complet. Depuis les corrections de sourçage des sessions 15 et 16, ces sources font en moyenne 126 caractères et jusqu'à 206 (`baisser-chauffage`) — contraire à l'exigence de `CLAUDE.md` de textes compréhensibles par un enfant de 10 ans, sur un écran de 360 px.

@@ -5,7 +5,8 @@
   "description": "Zéro build : ce fichier sert uniquement à exécuter les tests avec node et à builder la coquille Android en CI.",
   "dependencies": {
     "@capacitor/core": "^8.0.0",
-    "@capacitor/android": "^8.0.0"
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/local-notifications": "^8.3.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0"
