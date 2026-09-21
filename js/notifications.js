@@ -50,6 +50,30 @@ export function calculerProchaineEcheance(heureRappel, maintenant = new Date()) 
   return echeance;
 }
 
+// Un `import()` réseau qui n'aboutit jamais (ex. connexion mobile qui laisse
+// une requête ouverte sans jamais répondre, plutôt que la refuser franchement)
+// ne rejette pas forcément sa promesse : sans ceci, `chargerPlugin()` peut
+// rester bloqué indéfiniment sur un `await`, et tout appelant avec lui (par
+// exemple le bouton "Activer les rappels" de l'écran de demande, session 30).
+// Fonction pure, testable sans réseau ni minuteur réel.
+export function avecDelaiMaximum(promesse, delaiMs) {
+  return new Promise((resolve, reject) => {
+    const minuteur = setTimeout(() => reject(new Error("délai dépassé")), delaiMs);
+    promesse.then(
+      (valeur) => {
+        clearTimeout(minuteur);
+        resolve(valeur);
+      },
+      (erreur) => {
+        clearTimeout(minuteur);
+        reject(erreur);
+      }
+    );
+  });
+}
+
+const DELAI_MAX_CHARGEMENT_PLUGIN_MS = 4000;
+
 let pluginCharge = null;
 
 async function chargerPlugin() {
@@ -57,11 +81,14 @@ async function chargerPlugin() {
 
   for (const url of LOCAL_NOTIFICATIONS_MODULE_URLS) {
     try {
-      const module = await import(/* webpackIgnore: true */ url);
+      const module = await avecDelaiMaximum(
+        import(/* webpackIgnore: true */ url),
+        DELAI_MAX_CHARGEMENT_PLUGIN_MS
+      );
       pluginCharge = module.LocalNotifications;
       if (pluginCharge) return pluginCharge;
     } catch {
-      // CDN suivant.
+      // CDN suivant (ou délai dépassé).
     }
   }
   return null;

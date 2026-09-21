@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { parserHeure, calculerProchaineEcheance, doitProposerPermission } from "../js/notifications.js";
+import {
+  parserHeure,
+  calculerProchaineEcheance,
+  doitProposerPermission,
+  avecDelaiMaximum,
+} from "../js/notifications.js";
 
 // parserHeure : découpe "HH:MM" en heure/minute numériques
 {
@@ -101,6 +106,29 @@ import { parserHeure, calculerProchaineEcheance, doitProposerPermission } from "
 {
   const etat = { gestesCochesParDate: { "2026-09-20": ["geste-a"] } };
   assert.equal(doitProposerPermission(etat), true);
+}
+
+// avecDelaiMaximum : une promesse qui se résout avant le délai renvoie sa valeur
+{
+  const resultat = await avecDelaiMaximum(Promise.resolve(42), 1000);
+  assert.equal(resultat, 42);
+}
+
+// avecDelaiMaximum : une promesse qui rejette avant le délai propage l'erreur d'origine
+{
+  await assert.rejects(
+    avecDelaiMaximum(Promise.reject(new Error("boom")), 1000),
+    /boom/
+  );
+}
+
+// avecDelaiMaximum : une promesse qui ne se résout ni ne rejette jamais (ex. import()
+// réseau resté en suspens) finit par rejeter une fois le délai dépassé, plutôt que de
+// bloquer indéfiniment l'appelant — c'est le bug qui laissait l'écran de demande de
+// permission (session 30) sans aucun bouton utilisable si le CDN ne répondait jamais.
+{
+  const jamaisResolue = new Promise(() => {});
+  await assert.rejects(avecDelaiMaximum(jamaisResolue, 20));
 }
 
 console.log("✅ tests notifications : OK");

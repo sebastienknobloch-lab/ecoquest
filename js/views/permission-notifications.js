@@ -33,17 +33,29 @@ export function renderPermissionNotifications(container, state, onTermine) {
   accepterBtn.type = "button";
   accepterBtn.textContent = "Activer les rappels";
 
+  // Empêche une double réponse si "Non merci" est tapé pendant que
+  // "Activer les rappels" attend encore le réseau (voir plus bas) : sans ce
+  // garde-fou, la réponse tardive de la seconde écraserait l'état déjà
+  // persisté par la première avec un instantané périmé.
+  let dejaRepondu = false;
+
   function terminer(permissionAccordee) {
+    if (dejaRepondu) return;
+    dejaRepondu = true;
     onTermine({
       ...state,
       notifications: { permissionDemandee: true, permissionAccordee },
     });
   }
 
+  // "Non merci" reste toujours cliquable, y compris pendant l'attente de
+  // "Activer les rappels" : sans échappatoire, une réponse réseau qui tarde
+  // (voir avecDelaiMaximum dans js/notifications.js) laisserait l'utilisateur
+  // bloqué sur cet écran sans aucun bouton disponible.
   refuserBtn.addEventListener("click", () => terminer(false));
   accepterBtn.addEventListener("click", async () => {
-    refuserBtn.disabled = true;
     accepterBtn.disabled = true;
+    accepterBtn.textContent = "Un instant…";
     const permissionAccordee = await demanderPermissionNotifications();
     terminer(permissionAccordee);
   });

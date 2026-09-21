@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-21 — Correctif : l'écran de demande d'autorisation notifications restait bloqué
+
+- Signalé après le merge de la session 30 : ni « Activer les rappels » ni « Non merci » ne fermaient l'écran. Cause : `chargerPlugin()` (`js/notifications.js`) attendait `import()` des CDN Capacitor sans aucun délai maximal — sur un réseau qui laisse une requête ouverte sans jamais répondre (fréquent en mobile) plutôt que de la refuser franchement, cet `await` ne se résolvait ni ne rejetait jamais. Le clic sur « Activer les rappels » désactivait *aussi* le bouton « Non merci » en attendant sa réponse : les deux boutons se retrouvaient bloqués ensemble.
+- `js/notifications.js` : nouvelle fonction pure `avecDelaiMaximum(promesse, delaiMs)`, qui fait échouer une promesse au bout d'un délai plutôt que d'attendre indéfiniment. `chargerPlugin()` l'applique à chaque tentative d'`import()` (4 s par CDN, donc 8 s maximum avant de renvoyer `null`).
+- `js/views/permission-notifications.js` : « Non merci » n'est plus jamais désactivé, y compris pendant l'attente réseau d'« Activer les rappels » — toujours une échappatoire immédiate. Un garde-fou (`dejaRepondu`) empêche qu'une réponse tardive d'« Activer » (après coup, une fois le délai dépassé) écrase l'état déjà persisté par un « Non merci » entre-temps.
+- Nouveaux tests dans `tests/notifications.test.js` pour `avecDelaiMaximum` : promesse résolue avant le délai, promesse rejetée avant le délai (erreur propagée telle quelle), promesse qui ne se résout jamais (rejette une fois le délai dépassé).
+- Vérifié en conditions réelles (CDN inaccessibles dans le sandbox de test, simulant exactement une requête qui ne répond jamais) : « Non merci » ferme l'écran instantanément même pendant qu'« Activer les rappels » patiente encore, et la réponse tardive de ce dernier n'écrase plus l'état.
+
 ## 2026-09-21 — Session 30 : écran de demande d'autorisation notifications
 
 - Nouveau `js/views/permission-notifications.js` : écran plein cadre affiché une seule fois par utilisateur, qui explique la valeur en une phrase (« un seul rappel par jour, avec ton geste du jour dedans ») et propose « Activer les rappels » / « Non merci ». Jamais au premier lancement : voir `doitProposerPermission()` dans `js/notifications.js`, qui ne devient vrai qu'à partir du tout premier geste validé (`totalGestesValides`, désormais exporté par `js/gamification.js`) et tant que la permission n'a encore jamais été demandée.
