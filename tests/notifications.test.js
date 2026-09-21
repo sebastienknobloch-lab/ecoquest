@@ -1,5 +1,22 @@
 import assert from "node:assert/strict";
-import { parserHeure, calculerProchaineEcheance, doitProposerPermission } from "../js/notifications.js";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import {
+  parserHeure,
+  calculerProchaineEcheance,
+  doitProposerPermission,
+  genererContenuRappel,
+  gesteDuRappel,
+  CONTENU_RAPPEL_PAR_DEFAUT,
+} from "../js/notifications.js";
+import { selectionDuJour } from "../js/gamification.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const gestes = JSON.parse(
+  readFileSync(path.join(__dirname, "../data/gestes.json"), "utf-8")
+);
+const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant d'une pièce", co2_evite_g: 10 };
 
 // parserHeure : découpe "HH:MM" en heure/minute numériques
 {
@@ -101,6 +118,58 @@ import { parserHeure, calculerProchaineEcheance, doitProposerPermission } from "
 {
   const etat = { gestesCochesParDate: { "2026-09-20": ["geste-a"] } };
   assert.equal(doitProposerPermission(etat), true);
+}
+
+// genererContenuRappel : cite toujours le libellé du geste et son bénéfice
+// concret (co2_evite_g), jamais le texte générique par défaut
+{
+  for (let i = 0; i < 10; i++) {
+    const contenu = genererContenuRappel(gesteTest, () => i / 10);
+    assert.ok(contenu.body.includes(gesteTest.libelle), `variante ${i} : geste cité`);
+    assert.ok(contenu.body.includes(String(gesteTest.co2_evite_g)), `variante ${i} : chiffre cité`);
+    assert.ok(contenu.body.includes("estimation"), `variante ${i} : présenté comme une estimation`);
+    assert.notEqual(contenu.body, CONTENU_RAPPEL_PAR_DEFAUT.body, `variante ${i} : jamais le texte générique`);
+  }
+}
+
+// genererContenuRappel : exactement 10 variantes, tirées au sort via `alea`
+// (0 -> première variante, juste sous 1 -> dernière, sans dépasser le tableau)
+{
+  const contenus = new Set();
+  for (let i = 0; i < 10; i++) {
+    contenus.add(JSON.stringify(genererContenuRappel(gesteTest, () => i / 10)));
+  }
+  assert.equal(contenus.size, 10, "les 10 tirages possibles donnent 10 contenus distincts");
+
+  const dernier = genererContenuRappel(gesteTest, () => 0.999999);
+  assert.ok(dernier.body.includes(gesteTest.libelle));
+}
+
+// genererContenuRappel : deux gestes différents ne donnent jamais le même
+// contenu pour un même tirage (le geste, pas seulement la formulation, varie)
+{
+  const autreGeste = { id: "autre", libelle: "Manger un repas végétarien", co2_evite_g: 990 };
+  const contenuA = genererContenuRappel(gesteTest, () => 0.42);
+  const contenuB = genererContenuRappel(autreGeste, () => 0.42);
+  assert.notEqual(contenuA.body, contenuB.body);
+}
+
+// gesteDuRappel : cite le premier des 3 gestes du jour, cohérent avec ce que
+// l'écran Aujourd'hui affiche pour la même date (même sélection déterministe)
+{
+  const dateISO = "2026-09-21";
+  const attendu = selectionDuJour(gestes, dateISO)[0];
+  assert.deepEqual(gesteDuRappel(gestes, dateISO), attendu);
+}
+
+// gesteDuRappel : respecte les catégories prioritaires, comme selectionDuJour
+{
+  const dateISO = "2026-09-21";
+  const prioritaires = ["dechets", "numerique", "energie"];
+  const attendu = selectionDuJour(gestes, dateISO, prioritaires)[0];
+  const obtenu = gesteDuRappel(gestes, dateISO, prioritaires);
+  assert.deepEqual(obtenu, attendu);
+  assert.ok(prioritaires.includes(obtenu.categorie));
 }
 
 console.log("✅ tests notifications : OK");

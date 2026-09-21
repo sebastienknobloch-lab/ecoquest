@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-21 — Session 31 : contenu variable du rappel quotidien
+
+- `js/notifications.js` : 10 variantes de contenu de rappel, chacune citant le libellé du geste du jour et son bénéfice concret (`co2_evite_g`, la même donnée déjà affichée sur l'écran Aujourd'hui), toujours présenté comme une « estimation » (voir `CLAUDE.md`, chiffres d'impact). `CONTENU_RAPPEL_PAR_DEFAUT` ne sert plus que de repli technique (plugin indisponible) — le contenu réellement destiné à l'utilisateur ne doit jamais être ce texte générique.
+- Nouvelle `genererContenuRappel(geste, alea = Math.random)` : tire une des 10 variantes au sort. `alea` injectable (même schéma que `maintenant` pour `calculerProchaineEcheance`), pour un tirage déterministe et testable.
+- Nouvelle `gesteDuRappel(gestes, dateISO, categoriesPrioritaires)` : réutilise `selectionDuJour()` de `js/gamification.js` et retient le premier des 3 gestes du jour — jamais un geste différent de ceux affichés en ouvrant l'app.
+- Pas encore branché à `js/app.js` ni à l'écran de permission (session 30) : le branchement (appel réel à `programmerRappelQuotidien()` avec ce contenu) arrive avec les réglages de notification de l'écran Profil, session 32.
+- `sw.js` : cache renommé `ecoquest-shell-v25` (`js/notifications.js` fait partie de l'app shell précaché).
+- Nouveaux tests dans `tests/notifications.test.js` : chaque variante cite bien le libellé et le chiffre du geste et jamais le texte générique par défaut ; les 10 tirages possibles donnent 10 contenus distincts ; un tirage identique sur deux gestes différents donne un contenu différent ; `gesteDuRappel()` correspond au premier geste de `selectionDuJour()` pour la même date, avec et sans catégories prioritaires.
+
 ## 2026-09-21 — Session 30 : écran de demande d'autorisation notifications
 
 - Nouveau `js/views/permission-notifications.js` : écran plein cadre affiché une seule fois par utilisateur, qui explique la valeur en une phrase (« un seul rappel par jour, avec ton geste du jour dedans ») et propose « Activer les rappels » / « Non merci ». Jamais au premier lancement : voir `doitProposerPermission()` dans `js/notifications.js`, qui ne devient vrai qu'à partir du tout premier geste validé (`totalGestesValides`, désormais exporté par `js/gamification.js`) et tant que la permission n'a encore jamais été demandée.
