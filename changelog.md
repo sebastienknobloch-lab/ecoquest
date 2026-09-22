@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-22 — Session 32 : réglages de notification sur l'écran Profil
+
+- Nouvelle section « 🔔 Ton rappel quotidien » sur l'écran Profil (`js/views/profil.js`) : un interrupteur (cible tactile ≥ 44 px, `.notifications-toggle`) pour activer/désactiver le rappel et un `<input type="time">` pour changer l'heure. Aucun bouton « Enregistrer » : chaque interaction (`change`) applique aussitôt le réglage et reprogramme ou annule le rappel — en deux taps maximum, comme demandé. Visible seulement si l'autorisation système a déjà été accordée (`peutActiverRappel()`) ; sinon un message explique pourquoi (jamais de geste validé, ou autorisation refusée — jamais redemandée, voir `CLAUDE.md`).
+- `js/notifications.js` : le branchement annoncé en session 31 arrive enfin. Deux nouvelles fonctions pures : `peutActiverRappel(state)` (l'autorisation système a-t-elle déjà été accordée) et `contenuRappelPourAujourdhui(gestes, state, alea)` (compose le contenu du jour via `gesteDuRappel()` + `genererContenuRappel()`, repli sur `CONTENU_RAPPEL_PAR_DEFAUT` si le catalogue n'est pas encore chargé).
+- `js/views/permission-notifications.js` : accepter les notifications programme désormais aussitôt le rappel (`programmerRappelQuotidien()` avec le contenu du geste du jour) plutôt que d'attendre un premier passage par Profil — le catalogue n'est chargé qu'à l'acceptation, jamais au montage, pour ne pas pénaliser le cas le plus fréquent d'un premier essai (le refus).
+- `state.notifications` gagne un champ `actif` (`js/state.js`) : distinct de `permissionAccordee`, qui ne change plus une fois demandé, `actif` peut être basculé à volonté depuis Profil tant que l'autorisation système tient. Migration douce : un état existant avec `permissionAccordee: true` mais sans `actif` (avant cette session) est réactivé plutôt que silencieusement éteint, au chargement comme à l'import ; `actif` reste optionnel dans `estNotificationsValide` pour ne jamais rejeter un export plus ancien.
+- `sw.js` : cache renommé `ecoquest-shell-v26`.
+- Nouveaux tests : `peutActiverRappel()` et `contenuRappelPourAujourdhui()` dans `tests/notifications.test.js` ; migration douce de `actif` (chargement et import, autorisation accordée/refusée, valeur déjà présente jamais écrasée) dans `tests/state.test.js` et `tests/state-export-import.test.js` ; validation de `actif` (rejeté si mal typé, optionnel si absent) dans `tests/state-export-import.test.js`.
+
 ## 2026-09-21 — Session 31 : contenu variable du rappel quotidien
 
 - `js/notifications.js` : 10 variantes de contenu de rappel, chacune citant le libellé du geste du jour et son bénéfice concret (`co2_evite_g`, la même donnée déjà affichée sur l'écran Aujourd'hui), toujours présenté comme une « estimation » (voir `CLAUDE.md`, chiffres d'impact). `CONTENU_RAPPEL_PAR_DEFAUT` ne sert plus que de repli technique (plugin indisponible) — le contenu réellement destiné à l'utilisateur ne doit jamais être ce texte générique.

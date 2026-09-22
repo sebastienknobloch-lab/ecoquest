@@ -8,9 +8,12 @@ import {
   doitProposerPermission,
   genererContenuRappel,
   gesteDuRappel,
+  peutActiverRappel,
+  contenuRappelPourAujourdhui,
   CONTENU_RAPPEL_PAR_DEFAUT,
 } from "../js/notifications.js";
 import { selectionDuJour } from "../js/gamification.js";
+import { dateDuJour } from "../js/state.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gestes = JSON.parse(
@@ -170,6 +173,32 @@ const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant
   const obtenu = gesteDuRappel(gestes, dateISO, prioritaires);
   assert.deepEqual(obtenu, attendu);
   assert.ok(prioritaires.includes(obtenu.categorie));
+}
+
+// peutActiverRappel : seule une autorisation système déjà accordée permet
+// d'activer le réglage depuis Profil — jamais si jamais demandée ou refusée
+{
+  assert.equal(peutActiverRappel({ notifications: { permissionAccordee: true } }), true);
+  assert.equal(peutActiverRappel({ notifications: { permissionAccordee: false } }), false);
+  assert.equal(peutActiverRappel({ notifications: { permissionAccordee: null } }), false);
+  assert.equal(peutActiverRappel({}), false);
+}
+
+// contenuRappelPourAujourdhui : cite le même geste que gesteDuRappel() pour
+// la date du jour et les mêmes catégories prioritaires
+{
+  const state = { onboarding: { categoriesPrioritaires: ["dechets", "numerique", "energie"] } };
+  const attendu = gesteDuRappel(gestes, dateDuJour(), state.onboarding.categoriesPrioritaires);
+  const contenu = contenuRappelPourAujourdhui(gestes, state, () => 0.5);
+  assert.ok(contenu.body.includes(attendu.libelle));
+  assert.ok(contenu.body.includes(String(attendu.co2_evite_g)));
+}
+
+// contenuRappelPourAujourdhui : sans catégories prioritaires ni catalogue
+// disponible, replie sur le contenu générique plutôt que de planter
+{
+  assert.deepEqual(contenuRappelPourAujourdhui([], {}), CONTENU_RAPPEL_PAR_DEFAUT);
+  assert.deepEqual(contenuRappelPourAujourdhui(null, {}), CONTENU_RAPPEL_PAR_DEFAUT);
 }
 
 console.log("✅ tests notifications : OK");

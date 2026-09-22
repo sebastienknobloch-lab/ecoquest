@@ -15,9 +15,14 @@ export const ONBOARDING_PAR_DEFAUT = {
 // (session 30) a été présenté une fois, qu'il ait été accepté ou refusé — un
 // seul essai par utilisateur (voir CLAUDE.md), jamais redemandé ensuite.
 // permissionAccordee : null tant que pas encore demandée, sinon le résultat.
+// actif : le rappel quotidien est-il programmé côté app (session 32,
+// réglages Profil) — distinct de permissionAccordee, qui ne peut plus
+// changer une fois demandé, alors qu'actif peut être basculé à volonté tant
+// que l'autorisation système reste accordée.
 export const NOTIFICATIONS_PAR_DEFAUT = {
   permissionDemandee: false,
   permissionAccordee: null,
+  actif: false,
 };
 
 // Toute nouvelle propriété doit avoir une valeur par défaut ici
@@ -91,6 +96,14 @@ export function loadState() {
 
     // Migration douce : `notifications` n'existait pas avant cette version.
     state.notifications = { ...NOTIFICATIONS_PAR_DEFAUT, ...(parsed.notifications || {}) };
+    // Migration douce (session 32) : `actif` n'existait pas avant cette
+    // version. Un utilisateur ayant déjà accordé l'autorisation système
+    // voulait un rappel actif (rien n'était encore programmé avant cette
+    // session) : on ne le prive pas du rappel au premier chargement qui suit
+    // la mise à jour.
+    if (parsed.notifications && parsed.notifications.actif === undefined && state.notifications.permissionAccordee === true) {
+      state.notifications.actif = true;
+    }
 
     return state;
   } catch {
@@ -177,7 +190,10 @@ function estNotificationsValide(valeur) {
   return (
     estObjetSimple(valeur) &&
     typeof valeur.permissionDemandee === "boolean" &&
-    (valeur.permissionAccordee === null || typeof valeur.permissionAccordee === "boolean")
+    (valeur.permissionAccordee === null || typeof valeur.permissionAccordee === "boolean") &&
+    // Optionnel : absent dans tout export fait avant cette session (voir la
+    // même règle pour `onboarding` et `notifications` eux-mêmes ci-dessus).
+    (valeur.actif === undefined || typeof valeur.actif === "boolean")
   );
 }
 
@@ -239,6 +255,14 @@ export function importerEtatJSON(texte) {
   // pour ne pas le ré-afficher à un utilisateur existant à l'import.
   if (!etatBrut.onboarding && etat.points > 0) {
     etat.onboarding.termine = true;
+  }
+
+  // Migration douce (même règle qu'à loadState()) : une sauvegarde exportée
+  // avant l'ajout d'`actif` (session 32) mais dont l'autorisation système
+  // avait déjà été accordée est réactivée à l'import, plutôt que de perdre
+  // silencieusement le rappel.
+  if (etatBrut.notifications && etatBrut.notifications.actif === undefined && etat.notifications.permissionAccordee === true) {
+    etat.notifications.actif = true;
   }
 
   return { valide: true, etat };

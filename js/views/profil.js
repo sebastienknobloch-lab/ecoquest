@@ -7,6 +7,12 @@ import {
   nombreGestesAVerifier,
 } from "../gamification.js";
 import { dateDuJour, exporterEtatJSON, importerEtatJSON } from "../state.js";
+import {
+  peutActiverRappel,
+  contenuRappelPourAujourdhui,
+  programmerRappelQuotidien,
+  annulerRappelQuotidien,
+} from "../notifications.js";
 import { APP_VERSION } from "../version.js";
 import { activerConsoleDebug, surveillerTapsVersion } from "../debug.js";
 import { afficherEcranDebug } from "./debug.js";
@@ -186,6 +192,84 @@ export function renderProfil(container, state, persist) {
   statusEl.className = "status";
   statusEl.textContent = "Chargement…";
 
+  // Réglages du rappel quotidien (session 32) : activer/désactiver et
+  // changer l'heure, en deux taps maximum — aucun bouton "Enregistrer",
+  // chaque changement s'applique immédiatement (voir CLAUDE.md, économie de
+  // la permission notification). Visible seulement si l'autorisation
+  // système a déjà été accordée : re-proposer un tapotage inutile quand
+  // aucun rappel ne peut de toute façon sonner serait trompeur.
+  const notifTitre = document.createElement("h2");
+  notifTitre.className = "section-titre";
+  notifTitre.textContent = "🔔 Ton rappel quotidien";
+
+  const notifBloc = document.createElement("div");
+  notifBloc.className = "notifications-bloc";
+
+  if (peutActiverRappel(state)) {
+    const toggleLigne = document.createElement("label");
+    toggleLigne.className = "notifications-toggle-ligne";
+
+    const notifToggle = document.createElement("input");
+    notifToggle.type = "checkbox";
+    notifToggle.className = "notifications-toggle";
+    notifToggle.checked = state.notifications?.actif === true;
+
+    const toggleTexte = document.createElement("span");
+    toggleTexte.textContent = "Rappel quotidien activé";
+
+    toggleLigne.append(notifToggle, toggleTexte);
+
+    const heureLabel = document.createElement("label");
+    heureLabel.className = "onboarding-label";
+    heureLabel.textContent = "Heure du rappel";
+    heureLabel.htmlFor = "profil-heure-rappel";
+
+    const notifHeureInput = document.createElement("input");
+    notifHeureInput.type = "time";
+    notifHeureInput.id = "profil-heure-rappel";
+    notifHeureInput.className = "onboarding-champ";
+    notifHeureInput.value = state.onboarding?.heureRappel || "19:00";
+    notifHeureInput.disabled = !notifToggle.checked;
+
+    // Un seul tap sur l'interrupteur ou l'heure suffit : pas de confirmation
+    // intermédiaire, la reprogrammation (ou l'annulation) part aussitôt.
+    async function appliquerReglageNotifications() {
+      const heureRappel = notifHeureInput.value || state.onboarding?.heureRappel || "19:00";
+      const actif = notifToggle.checked;
+      const nouvelEtat = {
+        ...state,
+        onboarding: { ...state.onboarding, heureRappel },
+        notifications: { ...state.notifications, actif },
+      };
+      persist(nouvelEtat);
+      state = nouvelEtat;
+      if (actif) {
+        await programmerRappelQuotidien(heureRappel, contenuRappelPourAujourdhui(catalogueGestes, state));
+      } else {
+        await annulerRappelQuotidien();
+      }
+    }
+
+    notifToggle.addEventListener("change", () => {
+      notifHeureInput.disabled = !notifToggle.checked;
+      appliquerReglageNotifications();
+    });
+    notifHeureInput.addEventListener("change", () => {
+      if (!notifHeureInput.value) return;
+      appliquerReglageNotifications();
+    });
+
+    notifBloc.append(toggleLigne, heureLabel, notifHeureInput);
+  } else {
+    const notifMessage = document.createElement("p");
+    notifMessage.className = "notifications-message";
+    notifMessage.textContent =
+      state.notifications?.permissionAccordee === false
+        ? "Autorise les notifications dans les réglages de ton téléphone pour activer le rappel."
+        : "Valide un premier geste pour pouvoir activer le rappel quotidien.";
+    notifBloc.append(notifMessage);
+  }
+
   // Sauvegarde manuelle : seul filet de sécurité tant que la synchronisation
   // Supabase (phase 4) n'existe pas (un vidage du stockage détruit tout
   // l'historique sinon). Voir js/state.js pour l'export/import et la
@@ -269,6 +353,8 @@ export function renderProfil(container, state, persist) {
     titre,
     grille,
     statusEl,
+    notifTitre,
+    notifBloc,
     sauvegardeTitre,
     sauvegardeBloc,
     versionEl

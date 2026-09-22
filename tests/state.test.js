@@ -165,7 +165,7 @@ const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT, NOTIFICATIONS_P
       { type: "erreur", message: "boom", source: "app.js", ligne: 1, colonne: 2, pile: null, horodatage: "2026-05-01T10:00:00.000Z" },
     ],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "20:30" },
-    notifications: { permissionDemandee: true, permissionAccordee: true },
+    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true },
   };
   saveState(etatOriginal);
   const etatRelu = loadState();
@@ -234,6 +234,51 @@ const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT, NOTIFICATIONS_P
   const etat = loadState();
   assert.equal(etat.notifications.permissionDemandee, true);
   assert.equal(etat.notifications.permissionAccordee, null);
+  assert.equal(etat.notifications.actif, false);
+}
+
+// Migration douce (session 32) : `actif` n'existait pas avant cette version.
+// Une autorisation déjà accordée réactive le rappel plutôt que de le laisser
+// éteint après la mise à jour.
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({
+      points: 0,
+      gestesCochesParDate: {},
+      notifications: { permissionDemandee: true, permissionAccordee: true },
+    }),
+  });
+  const etat = loadState();
+  assert.equal(etat.notifications.actif, true);
+}
+
+// Migration douce (session 32) : une autorisation refusée (ou jamais
+// demandée) ne réactive jamais `actif` au chargement
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({
+      points: 0,
+      gestesCochesParDate: {},
+      notifications: { permissionDemandee: true, permissionAccordee: false },
+    }),
+  });
+  const etat = loadState();
+  assert.equal(etat.notifications.actif, false);
+}
+
+// `actif` déjà présent (explicitement à false malgré permissionAccordee true,
+// l'utilisateur a désactivé le rappel depuis Profil) : jamais réécrasé par la
+// migration douce
+{
+  globalThis.localStorage = creerLocalStorageFactice({
+    [STORAGE_KEY]: JSON.stringify({
+      points: 0,
+      gestesCochesParDate: {},
+      notifications: { permissionDemandee: true, permissionAccordee: true, actif: false },
+    }),
+  });
+  const etat = loadState();
+  assert.equal(etat.notifications.actif, false);
 }
 
 console.log("✅ tests state (localStorage/migrations) : OK");
