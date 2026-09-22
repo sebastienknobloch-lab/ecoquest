@@ -14,6 +14,7 @@
 // fonction de programmation devient alors un no-op silencieux plutôt
 // qu'une erreur.
 import { totalGestesValides, selectionDuJour } from "./gamification.js";
+import { dateDuJour } from "./state.js";
 const LOCAL_NOTIFICATIONS_MODULE_URLS = [
   "https://esm.sh/@capacitor/local-notifications@8",
   "https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@8/+esm",
@@ -210,4 +211,26 @@ export function genererContenuRappel(geste, alea = Math.random) {
 export function gesteDuRappel(gestes, dateISO, categoriesPrioritaires = []) {
   const [geste] = selectionDuJour(gestes, dateISO, categoriesPrioritaires);
   return geste;
+}
+
+// --- Réglages du rappel depuis l'écran Profil (session 32) ---
+//
+// Le réglage ne peut être activé que si l'autorisation système a déjà été
+// accordée une fois : l'écran de demande (session 30) ne redemande jamais —
+// un seul essai par utilisateur (voir CLAUDE.md). Fonction pure, testable
+// sans DOM ni Capacitor.
+export function peutActiverRappel(state) {
+  return state.notifications?.permissionAccordee === true;
+}
+
+// Compose le contenu du rappel pour aujourd'hui à partir d'un catalogue déjà
+// chargé par la vue appelante (écran de permission, Profil) : même geste que
+// celui affiché sur l'écran Aujourd'hui pour les mêmes catégories
+// prioritaires (voir gesteDuRappel ci-dessus). Repli sur
+// CONTENU_RAPPEL_PAR_DEFAUT si le catalogue n'est pas (encore) disponible,
+// plutôt que d'empêcher la programmation du rappel.
+export function contenuRappelPourAujourdhui(gestes, state, alea = Math.random) {
+  if (!gestes || gestes.length === 0) return CONTENU_RAPPEL_PAR_DEFAUT;
+  const geste = gesteDuRappel(gestes, dateDuJour(), state.onboarding?.categoriesPrioritaires || []);
+  return geste ? genererContenuRappel(geste, alea) : CONTENU_RAPPEL_PAR_DEFAUT;
 }

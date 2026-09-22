@@ -4,7 +4,25 @@
 // qu'après la toute première validation de geste. Qu'il accepte ou refuse,
 // state.notifications.permissionDemandee passe à true dans les deux cas —
 // jamais reproposé ensuite (voir CLAUDE.md, un seul essai par utilisateur).
-import { demanderPermissionNotifications } from "../notifications.js";
+//
+// Accepter programme aussitôt le rappel quotidien (branchement session 32,
+// voir changelog.md session 31) : c'est le seul moment où l'autorisation
+// système vient d'être obtenue, inutile d'attendre un premier passage par
+// l'écran Profil pour que « le cœur du produit » (CLAUDE.md) commence à
+// sonner. Le catalogue n'est chargé qu'à l'acceptation, jamais au montage :
+// inutile de le récupérer pour l'issue la plus fréquente d'un premier essai,
+// le refus.
+import { demanderPermissionNotifications, programmerRappelQuotidien, contenuRappelPourAujourdhui } from "../notifications.js";
+
+async function chargerCatalogue() {
+  try {
+    const reponse = await fetch("data/gestes.json");
+    if (!reponse.ok) throw new Error("gestes.json indisponible");
+    return await reponse.json();
+  } catch {
+    return [];
+  }
+}
 
 export function renderPermissionNotifications(container, state, onTermine) {
   container.innerHTML = "";
@@ -36,7 +54,7 @@ export function renderPermissionNotifications(container, state, onTermine) {
   function terminer(permissionAccordee) {
     onTermine({
       ...state,
-      notifications: { permissionDemandee: true, permissionAccordee },
+      notifications: { permissionDemandee: true, permissionAccordee, actif: permissionAccordee },
     });
   }
 
@@ -45,6 +63,13 @@ export function renderPermissionNotifications(container, state, onTermine) {
     refuserBtn.disabled = true;
     accepterBtn.disabled = true;
     const permissionAccordee = await demanderPermissionNotifications();
+    if (permissionAccordee) {
+      const gestes = await chargerCatalogue();
+      await programmerRappelQuotidien(
+        state.onboarding?.heureRappel || "19:00",
+        contenuRappelPourAujourdhui(gestes, state)
+      );
+    }
     terminer(permissionAccordee);
   });
 

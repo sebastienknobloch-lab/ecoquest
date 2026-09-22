@@ -13,7 +13,7 @@ function etatValide() {
     joker: { disponible: 1, semaine: "2026-W01", dejaUtilise: false },
     erreurs: [],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "19:00" },
-    notifications: { permissionDemandee: true, permissionAccordee: true },
+    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true },
   };
 }
 
@@ -89,8 +89,18 @@ function etatValide() {
     validerEtat({ ...etatValide(), notifications: { permissionDemandee: true, permissionAccordee: "oui" } }),
     false
   );
+  assert.equal(
+    validerEtat({
+      ...etatValide(),
+      notifications: { permissionDemandee: true, permissionAccordee: true, actif: "oui" },
+    }),
+    false
+  );
   const { notifications, ...sansNotifications } = etatValide();
   assert.equal(validerEtat(sansNotifications), true);
+  // `actif` lui-même est optionnel (exports faits avant la session 32)
+  const { actif, ...notificationsSansActif } = etatValide().notifications;
+  assert.equal(validerEtat({ ...etatValide(), notifications: notificationsSansActif }), true);
 }
 
 // importerEtatJSON : JSON syntaxiquement invalide → rejeté avec un message, sans exception
@@ -157,6 +167,29 @@ function etatValide() {
   assert.equal(resultat.valide, true);
   assert.equal(resultat.etat.notifications.permissionDemandee, false);
   assert.equal(resultat.etat.notifications.permissionAccordee, null);
+  assert.equal(resultat.etat.notifications.actif, false);
+}
+
+// importerEtatJSON : migration douce (session 32) — une sauvegarde avec
+// `notifications` mais sans `actif` (export fait avant cette session) et une
+// autorisation déjà accordée réactive le rappel à l'import
+{
+  const etat = etatValide();
+  const { actif, ...notificationsSansActif } = etat.notifications;
+  const resultat = importerEtatJSON(JSON.stringify({ ...etat, notifications: notificationsSansActif }));
+  assert.equal(resultat.valide, true);
+  assert.equal(resultat.etat.notifications.actif, true);
+}
+
+// importerEtatJSON : même migration, mais une autorisation refusée ne
+// réactive jamais `actif`
+{
+  const etat = etatValide();
+  const resultat = importerEtatJSON(
+    JSON.stringify({ ...etat, notifications: { permissionDemandee: true, permissionAccordee: false } })
+  );
+  assert.equal(resultat.valide, true);
+  assert.equal(resultat.etat.notifications.actif, false);
 }
 
 console.log("✅ tests state export/import (sauvegarde manuelle) : OK");
