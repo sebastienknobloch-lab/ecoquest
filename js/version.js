@@ -5,4 +5,4 @@
 // android.yml (tag "v" + cette valeur, ex. tag v0.1.7 → APP_VERSION "0.1.7").
 // .github/workflows/android.yml fait échouer le build si les deux divergent :
 // voir l'étape "Vérifier que APP_VERSION correspond au tag".
-export const APP_VERSION = "0.1.7";
+export const APP_VERSION = "0.1.7b";
