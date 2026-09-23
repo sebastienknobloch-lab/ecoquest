@@ -62,13 +62,23 @@ export function renderPermissionNotifications(container, state, onTermine) {
   accepterBtn.addEventListener("click", async () => {
     refuserBtn.disabled = true;
     accepterBtn.disabled = true;
-    const permissionAccordee = await demanderPermissionNotifications();
-    if (permissionAccordee) {
-      const gestes = await chargerCatalogue();
-      await programmerRappelQuotidien(
-        state.onboarding?.heureRappel || "19:00",
-        contenuRappelPourAujourdhui(gestes, state)
-      );
+    // Filet de sécurité : demanderPermissionNotifications() et
+    // programmerRappelQuotidien() ne lèvent normalement jamais (voir
+    // js/notifications.js, avecDelaiMax), mais un écran qui reste bloqué sur
+    // "Activer les rappels" sans jamais avancer est pire qu'un rappel non
+    // programmé — mieux vaut continuer sans rappel que de coincer l'écran.
+    let permissionAccordee = false;
+    try {
+      permissionAccordee = await demanderPermissionNotifications();
+      if (permissionAccordee) {
+        const gestes = await chargerCatalogue();
+        await programmerRappelQuotidien(
+          state.onboarding?.heureRappel || "19:00",
+          contenuRappelPourAujourdhui(gestes, state)
+        );
+      }
+    } catch {
+      // On continue quand même : voir commentaire ci-dessus.
     }
     terminer(permissionAccordee);
   });

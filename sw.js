@@ -1,6 +1,6 @@
 import { doitMettreEnCache } from "./js/cache-policy.js";
 
-const CACHE_NAME = "ecoquest-shell-v26";
+const CACHE_NAME = "ecoquest-shell-v27";
 const APP_SHELL = [
   "./",
   "./index.html",
