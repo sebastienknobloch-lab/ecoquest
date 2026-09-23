@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-23 — Correctif 2 : cause réelle du blocage, plugin Capacitor renvoyé comme "thenable"
+
+- Le correctif précédent (délai maximum) n'a pas suffi : l'écran de debug a capturé la vraie cause, une erreur `"LocalNotifications.then()" is not implemented on android`. Un plugin Capacitor est un `Proxy` qui intercepte toute propriété manquante — y compris `then` — pour la transformer en appel au pont natif. `chargerPlugin()` renvoyait ce plugin tel quel comme valeur de retour d'une fonction `async` : le moteur JS le prend alors pour un "thenable" et appelle silencieusement `plugin.then(...)`, qu'Android rejette aussitôt puisque `then` n'est pas une vraie méthode du plugin — la promesse ne se résolvait donc jamais, d'où le bouton bloqué (le délai maximum ajouté au correctif précédent finissait bien par abandonner, mais seulement après 5 secondes, et seulement pour ce point précis ; ici la promesse était rejetée immédiatement, sans passer par ce délai).
+- `js/notifications.js` : `chargerPlugin()` enveloppe désormais systématiquement le plugin dans un objet simple (`{ plugin }`) avant de le renvoyer — un objet ordinaire sans propriété `then` ne peut jamais être confondu avec une promesse. Les trois appelants (`annulerRappelQuotidien`, `programmerRappelQuotidien`, `demanderPermissionNotifications`) déstructurent `{ plugin: LocalNotifications }` au lieu de recevoir le plugin directement.
+- `sw.js` : cache renommé `ecoquest-shell-v28`.
+
+## 2026-09-23 — Correctif : écran de permission bloqué sur "Activer les rappels"
+
+- Bug remonté sur téléphone : le bouton "Activer les rappels" restait désactivé indéfiniment (seul "Non merci" fonctionnait). Cause probable : `import()` dynamique du plugin `@capacitor/local-notifications` depuis le CDN (ou l'appel au pont natif) qui ne se résout jamais dans certaines conditions réseau/WebView — sans timeout, la promesse restait en attente pour toujours et le bouton ne se réactivait jamais.
+- `js/notifications.js` : nouvelle `avecDelaiMax(promesse, delaiMs = 5000)`, appliquée à l'`import()` du plugin (par CDN essayé), à `requestPermissions()`, `schedule()` et `cancel()`. Au-delà du délai, l'appel est traité comme un échec (déjà géré par les `try/catch` existants) plutôt que de bloquer indéfiniment.
+- `js/views/permission-notifications.js` : filet de sécurité supplémentaire — tout le corps du clic sur "Activer les rappels" est maintenant dans un `try/catch` qui, en cas d'imprévu, continue quand même vers l'écran suivant sans rappel programmé plutôt que de rester coincé.
+- `sw.js` : cache renommé `ecoquest-shell-v27`.
+- Nouveaux tests dans `tests/notifications.test.js` : `avecDelaiMax()` résout normalement une promesse rapide, rejette une promesse qui ne se résout jamais au bout du délai, propage l'erreur d'une promesse qui rejette avant le délai.
+
 ## 2026-09-22 — Session 32 : réglages de notification sur l'écran Profil
 
 - Nouvelle section « 🔔 Ton rappel quotidien » sur l'écran Profil (`js/views/profil.js`) : un interrupteur (cible tactile ≥ 44 px, `.notifications-toggle`) pour activer/désactiver le rappel et un `<input type="time">` pour changer l'heure. Aucun bouton « Enregistrer » : chaque interaction (`change`) applique aussitôt le réglage et reprogramme ou annule le rappel — en deux taps maximum, comme demandé. Visible seulement si l'autorisation système a déjà été accordée (`peutActiverRappel()`) ; sinon un message explique pourquoi (jamais de geste validé, ou autorisation refusée — jamais redemandée, voir `CLAUDE.md`).

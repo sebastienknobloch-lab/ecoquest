@@ -51,32 +51,59 @@ export function calculerProchaineEcheance(heureRappel, maintenant = new Date()) 
   return echeance;
 }
 
+// Délai maximum accordé à un appel réseau ou au pont natif Capacitor avant
+// d'abandonner. Sans lui, un `import()` distant qui ne répond jamais (WebView
+// qui bloque la requête, CDN injoignable sur le réseau du téléphone) ou un
+// appel au pont natif qui ne retourne jamais laisse sa promesse indéfiniment
+// en attente : côté écran de permission (session 30) ou réglages Profil
+// (session 32), le bouton reste désactivé pour toujours sans qu'aucune
+// erreur ne remonte — exactement le blocage observé sur téléphone, alors
+// qu'un refus explicite (aucun appel réseau) fonctionne toujours.
+const DELAI_MAX_MS = 5000;
+
+export function avecDelaiMax(promesse, delaiMs = DELAI_MAX_MS) {
+  return Promise.race([
+    promesse,
+    new Promise((_resolve, reject) => setTimeout(() => reject(new Error("délai dépassé")), delaiMs)),
+  ]);
+}
+
 let pluginCharge = null;
 
+// Un plugin Capacitor est un Proxy qui intercepte toute propriété manquante
+// — y compris `then` — pour la transformer en appel au pont natif. Le
+// renvoyer tel quel comme valeur de résolution d'une promesse (`return` dans
+// une fonction async, `Promise.race`…) le fait passer pour un "thenable" aux
+// yeux du moteur JS, qui appelle alors silencieusement `plugin.then(...)` —
+// et Android répond que cette "méthode" n'existe pas
+// (`"LocalNotifications.then()" is not implemented on android`, vu dans
+// l'écran de debug). Le plugin est donc toujours enveloppé dans un objet
+// simple ({ plugin }) : un objet ordinaire sans propriété `then` ne peut
+// jamais être confondu avec une promesse.
 async function chargerPlugin() {
-  if (pluginCharge) return pluginCharge;
+  if (pluginCharge) return { plugin: pluginCharge };
 
   for (const url of LOCAL_NOTIFICATIONS_MODULE_URLS) {
     try {
-      const module = await import(/* webpackIgnore: true */ url);
+      const module = await avecDelaiMax(import(/* webpackIgnore: true */ url));
       pluginCharge = module.LocalNotifications;
-      if (pluginCharge) return pluginCharge;
+      if (pluginCharge) return { plugin: pluginCharge };
     } catch {
-      // CDN suivant.
+      // CDN suivant (échec, ou délai dépassé).
     }
   }
-  return null;
+  return { plugin: null };
 }
 
 // Annule le rappel quotidien s'il existe. Ne lève jamais d'erreur : rien à
 // annuler (première utilisation) ou plugin indisponible (navigateur de
 // développement) sont deux issues normales, sans conséquence pour l'appelant.
 export async function annulerRappelQuotidien() {
-  const LocalNotifications = await chargerPlugin();
+  const { plugin: LocalNotifications } = await chargerPlugin();
   if (!LocalNotifications) return false;
 
   try {
-    await LocalNotifications.cancel({ notifications: [{ id: ID_RAPPEL_QUOTIDIEN }] });
+    await avecDelaiMax(LocalNotifications.cancel({ notifications: [{ id: ID_RAPPEL_QUOTIDIEN }] }));
     return true;
   } catch {
     return false;
@@ -94,23 +121,25 @@ export async function annulerRappelQuotidien() {
 // déclenchement) plutôt que de reprogrammer un `at` unique à chaque ouverture
 // de l'app — plus robuste si l'app reste fermée plusieurs jours.
 export async function programmerRappelQuotidien(heureRappel, contenu = CONTENU_RAPPEL_PAR_DEFAUT) {
-  const LocalNotifications = await chargerPlugin();
+  const { plugin: LocalNotifications } = await chargerPlugin();
   if (!LocalNotifications) return false;
 
   await annulerRappelQuotidien();
 
   const { heure, minute } = parserHeure(heureRappel);
   try {
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: ID_RAPPEL_QUOTIDIEN,
-          title: contenu.title || CONTENU_RAPPEL_PAR_DEFAUT.title,
-          body: contenu.body || CONTENU_RAPPEL_PAR_DEFAUT.body,
-          schedule: { on: { hour: heure, minute }, repeats: true },
-        },
-      ],
-    });
+    await avecDelaiMax(
+      LocalNotifications.schedule({
+        notifications: [
+          {
+            id: ID_RAPPEL_QUOTIDIEN,
+            title: contenu.title || CONTENU_RAPPEL_PAR_DEFAUT.title,
+            body: contenu.body || CONTENU_RAPPEL_PAR_DEFAUT.body,
+            schedule: { on: { hour: heure, minute }, repeats: true },
+          },
+        ],
+      })
+    );
     return true;
   } catch {
     return false;
@@ -132,11 +161,11 @@ export function doitProposerPermission(state) {
 // (navigateur de développement) : traité comme un refus plutôt qu'une
 // erreur, cohérent avec le reste du module.
 export async function demanderPermissionNotifications() {
-  const LocalNotifications = await chargerPlugin();
+  const { plugin: LocalNotifications } = await chargerPlugin();
   if (!LocalNotifications) return false;
 
   try {
-    const resultat = await LocalNotifications.requestPermissions();
+    const resultat = await avecDelaiMax(LocalNotifications.requestPermissions());
     return resultat?.display === "granted";
   } catch {
     return false;

@@ -10,6 +10,7 @@ import {
   gesteDuRappel,
   peutActiverRappel,
   contenuRappelPourAujourdhui,
+  avecDelaiMax,
   CONTENU_RAPPEL_PAR_DEFAUT,
 } from "../js/notifications.js";
 import { selectionDuJour } from "../js/gamification.js";
@@ -199,6 +200,25 @@ const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant
 {
   assert.deepEqual(contenuRappelPourAujourdhui([], {}), CONTENU_RAPPEL_PAR_DEFAUT);
   assert.deepEqual(contenuRappelPourAujourdhui(null, {}), CONTENU_RAPPEL_PAR_DEFAUT);
+}
+
+// avecDelaiMax : une promesse qui résout avant le délai renvoie sa valeur normalement
+{
+  const resultat = await avecDelaiMax(Promise.resolve("ok"), 50);
+  assert.equal(resultat, "ok");
+}
+
+// avecDelaiMax : une promesse qui ne se résout jamais (import() ou appel au
+// pont natif qui reste bloqué, symptôme reproduit sur téléphone : le bouton
+// "Activer les rappels" restait désactivé pour toujours) est rejetée au bout
+// du délai plutôt que de bloquer l'appelant indéfiniment
+{
+  await assert.rejects(avecDelaiMax(new Promise(() => {}), 20));
+}
+
+// avecDelaiMax : une promesse qui rejette avant le délai propage son erreur normalement
+{
+  await assert.rejects(avecDelaiMax(Promise.reject(new Error("échec réseau")), 50), /échec réseau/);
 }
 
 console.log("✅ tests notifications : OK");
