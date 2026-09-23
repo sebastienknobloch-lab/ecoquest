@@ -19,10 +19,15 @@ export const ONBOARDING_PAR_DEFAUT = {
 // réglages Profil) — distinct de permissionAccordee, qui ne peut plus
 // changer une fois demandé, alors qu'actif peut être basculé à volonté tant
 // que l'autorisation système reste accordée.
+// ouvertures : une entrée { le, notificationId } par ouverture de l'app
+// depuis une notification (session 33), la plus récente en dernier, plafonnée
+// (voir OUVERTURES_MAX dans js/notifications.js). Sert au taux d'action de
+// l'écran de debug (session 34).
 export const NOTIFICATIONS_PAR_DEFAUT = {
   permissionDemandee: false,
   permissionAccordee: null,
   actif: false,
+  ouvertures: [],
 };
 
 // Toute nouvelle propriété doit avoir une valeur par défaut ici
@@ -186,6 +191,13 @@ function estOnboardingValide(valeur) {
   );
 }
 
+function estOuverturesValide(valeur) {
+  return (
+    Array.isArray(valeur) &&
+    valeur.every((o) => estObjetSimple(o) && typeof o.le === "string")
+  );
+}
+
 function estNotificationsValide(valeur) {
   return (
     estObjetSimple(valeur) &&
@@ -193,7 +205,9 @@ function estNotificationsValide(valeur) {
     (valeur.permissionAccordee === null || typeof valeur.permissionAccordee === "boolean") &&
     // Optionnel : absent dans tout export fait avant cette session (voir la
     // même règle pour `onboarding` et `notifications` eux-mêmes ci-dessus).
-    (valeur.actif === undefined || typeof valeur.actif === "boolean")
+    (valeur.actif === undefined || typeof valeur.actif === "boolean") &&
+    // Optionnel pour la même raison (ajouté en session 33).
+    (valeur.ouvertures === undefined || estOuverturesValide(valeur.ouvertures))
   );
 }
 

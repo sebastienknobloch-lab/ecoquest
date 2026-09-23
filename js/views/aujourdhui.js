@@ -17,8 +17,13 @@ function libelleCategorie(categorieId) {
   return LIBELLES_CATEGORIES[categorieId] || categorieId;
 }
 
-export function renderAujourdhui(container, initialState, persist) {
+// `mettreEnAvantGesteDuRappel` (session 33) : l'app vient d'être ouverte
+// depuis la notification du jour. Le premier des 3 gestes du jour — celui
+// que cite le rappel (voir gesteDuRappel dans js/notifications.js) — est
+// mis en avant et amené à l'écran, une seule fois.
+export function renderAujourdhui(container, initialState, persist, { mettreEnAvantGesteDuRappel = false } = {}) {
   let state = initialState;
+  let aMettreEnAvant = mettreEnAvantGesteDuRappel;
   let gestes = null;
   // Id du geste qui vient d'être coché, pour ne jouer la micro-animation
   // qu'à cet endroit précis lors du prochain rendu.
@@ -216,6 +221,13 @@ export function renderAujourdhui(container, initialState, persist) {
     selectionDuJour(gestes, dateISO, categoriesPrioritaires).forEach((geste) => {
       duJourListe.append(creerLigneGeste(geste, dateISO, { microAnimation: true }));
     });
+
+    const gesteDuRappelEl = duJourListe.firstElementChild;
+    if (aMettreEnAvant && gesteDuRappelEl) {
+      aMettreEnAvant = false;
+      gesteDuRappelEl.classList.add("geste--depuis-rappel");
+      gesteDuRappelEl.scrollIntoView({ block: "center" });
+    }
   }
 
   function afficherCatalogueComplet(dateISO) {

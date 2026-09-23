@@ -13,7 +13,7 @@ function etatValide() {
     joker: { disponible: 1, semaine: "2026-W01", dejaUtilise: false },
     erreurs: [],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "19:00" },
-    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true },
+    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true, ouvertures: [] },
   };
 }
 
@@ -101,6 +101,18 @@ function etatValide() {
   // `actif` lui-même est optionnel (exports faits avant la session 32)
   const { actif, ...notificationsSansActif } = etatValide().notifications;
   assert.equal(validerEtat({ ...etatValide(), notifications: notificationsSansActif }), true);
+}
+
+// validerEtat : `notifications.ouvertures` (session 33) optionnel, mais
+// rejeté s'il est mal formé
+{
+  const notifications = etatValide().notifications;
+  const avec = (ouvertures) => validerEtat({ ...etatValide(), notifications: { ...notifications, ouvertures } });
+  assert.equal(avec([{ le: "2026-09-23T19:02:00.000Z", notificationId: 1 }]), true);
+  assert.equal(avec([]), true);
+  assert.equal(avec("hier"), false);
+  assert.equal(avec([{ notificationId: 1 }]), false);
+  assert.equal(avec(["2026-09-23"]), false);
 }
 
 // importerEtatJSON : JSON syntaxiquement invalide → rejeté avec un message, sans exception

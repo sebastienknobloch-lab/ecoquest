@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 — Session 33 : ouverture depuis une notification
+
+- `js/notifications.js` : nouvelle `ecouterOuverturesDepuisNotification(callback)`, branchée sur l'événement `localNotificationActionPerformed` du plugin Capacitor. L'événement d'un démarrage à froid (app fermée, ouverte par le tap) est gardé par Capacitor jusqu'au branchement de l'écouteur : le chargement du plugin depuis le CDN ne le fait pas perdre. Plugin indisponible (navigateur) : no-op silencieux.
+- Nouvelle fonction pure `enregistrerOuvertureDepuisNotification(state, notificationId, maintenant)` : ajoute `{ le, notificationId }` au journal `state.notifications.ouvertures` (plafonné à `OUVERTURES_MAX` = 90 entrées, les plus anciennes partent en premier) et bascule sur l'onglet Aujourd'hui. Ce journal alimentera le taux d'action de l'écran de debug (session 34).
+- `js/app.js` : à l'ouverture depuis une notification, l'app enregistre l'ouverture puis affiche directement l'écran Aujourd'hui. `js/views/aujourdhui.js` met alors en avant le premier des 3 gestes du jour, c'est-à-dire celui que cite le rappel (`gesteDuRappel`), avec un contour vert (`.geste--depuis-rappel`), et fait défiler la page jusqu'à lui.
+- `js/state.js` : `ouvertures: []` ajouté à `NOTIFICATIONS_PAR_DEFAUT` (migration douce au chargement comme à l'import). Le champ reste optionnel dans `estNotificationsValide`, mais un journal mal formé est rejeté.
+- `sw.js` : cache renommé `ecoquest-shell-v29`.
+- Nouveaux tests : `enregistrerOuvertureDepuisNotification()` (journal, onglet, immutabilité, journal absent, plafond) dans `tests/notifications.test.js` ; migration douce dans `tests/state.test.js` ; validation de `ouvertures` dans `tests/state-export-import.test.js`.
+
 ## 2026-09-23 — Correctif 2 : cause réelle du blocage, plugin Capacitor renvoyé comme "thenable"
 
 - Le correctif précédent (délai maximum) n'a pas suffi : l'écran de debug a capturé la vraie cause, une erreur `"LocalNotifications.then()" is not implemented on android`. Un plugin Capacitor est un `Proxy` qui intercepte toute propriété manquante — y compris `then` — pour la transformer en appel au pont natif. `chargerPlugin()` renvoyait ce plugin tel quel comme valeur de retour d'une fonction `async` : le moteur JS le prend alors pour un "thenable" et appelle silencieusement `plugin.then(...)`, qu'Android rejette aussitôt puisque `then` n'est pas une vraie méthode du plugin — la promesse ne se résolvait donc jamais, d'où le bouton bloqué (le délai maximum ajouté au correctif précédent finissait bien par abandonner, mais seulement après 5 secondes, et seulement pour ce point précis ; ici la promesse était rejetée immédiatement, sans passer par ce délai).

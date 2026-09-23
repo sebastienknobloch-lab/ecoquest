@@ -312,6 +312,14 @@ html, body {
   }
 }
 
+/* Geste cité par la notification du jour, quand l'app est ouverte depuis
+   elle (session 33) : contour vert franc, contraste AA sur fond clair. */
+.geste--depuis-rappel {
+  outline: 3px solid #2e7d32;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 .status {
   margin-top: 24px;
   font-size: 0.85rem;
