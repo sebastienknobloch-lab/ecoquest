@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23 — Correctif 2 : cause réelle du blocage, plugin Capacitor renvoyé comme "thenable"
+
+- Le correctif précédent (délai maximum) n'a pas suffi : l'écran de debug a capturé la vraie cause, une erreur `"LocalNotifications.then()" is not implemented on android`. Un plugin Capacitor est un `Proxy` qui intercepte toute propriété manquante — y compris `then` — pour la transformer en appel au pont natif. `chargerPlugin()` renvoyait ce plugin tel quel comme valeur de retour d'une fonction `async` : le moteur JS le prend alors pour un "thenable" et appelle silencieusement `plugin.then(...)`, qu'Android rejette aussitôt puisque `then` n'est pas une vraie méthode du plugin — la promesse ne se résolvait donc jamais, d'où le bouton bloqué (le délai maximum ajouté au correctif précédent finissait bien par abandonner, mais seulement après 5 secondes, et seulement pour ce point précis ; ici la promesse était rejetée immédiatement, sans passer par ce délai).
+- `js/notifications.js` : `chargerPlugin()` enveloppe désormais systématiquement le plugin dans un objet simple (`{ plugin }`) avant de le renvoyer — un objet ordinaire sans propriété `then` ne peut jamais être confondu avec une promesse. Les trois appelants (`annulerRappelQuotidien`, `programmerRappelQuotidien`, `demanderPermissionNotifications`) déstructurent `{ plugin: LocalNotifications }` au lieu de recevoir le plugin directement.
+- `sw.js` : cache renommé `ecoquest-shell-v28`.
+
 ## 2026-09-23 — Correctif : écran de permission bloqué sur "Activer les rappels"
 
 - Bug remonté sur téléphone : le bouton "Activer les rappels" restait désactivé indéfiniment (seul "Non merci" fonctionnait). Cause probable : `import()` dynamique du plugin `@capacitor/local-notifications` depuis le CDN (ou l'appel au pont natif) qui ne se résout jamais dans certaines conditions réseau/WebView — sans timeout, la promesse restait en attente pour toujours et le bouton ne se réactivait jamais.
