@@ -110,7 +110,7 @@ Objectif : une app installable, buildée sans jamais ouvrir Android Studio.
 - [x] **S30** — *« La demande d'autorisation n'apparaît qu'après la première validation de geste, dans un écran qui explique la valeur en une phrase. Jamais au premier lancement. Si l'utilisateur refuse, ne jamais redemander. »*
 - [x] **S31** — *« Le contenu de la notification cite le geste du jour et son bénéfice concret, jamais un rappel générique. Écris 10 variantes, tire au sort. »*
 - [x] **S32** — *« Réglages de notification sur l'écran Profil : activer/désactiver, changer l'heure, en deux taps maximum. »*
-- [ ] **S33** — *« Ouverture depuis une notification : l'enregistrer dans l'état et afficher directement le geste du jour. »*
+- [x] **S33** — *« Ouverture depuis une notification : l'enregistrer dans l'état et afficher directement le geste du jour. »*
 - [ ] **S34** — *« Sur l'écran de debug : notifications envoyées, ouvertes depuis notification, taux d'action sur 7 et 30 jours. Mon tableau de bord, pas celui de l'utilisateur. »*
 - [ ] **S35** — *« Série en danger : si aucun geste validé à 20 h et série en cours, un rappel unique. Jamais deux notifications le même jour. »*
 - [ ] **S36–S37** — Corrections issues de l'usage réel et des retours testeurs.

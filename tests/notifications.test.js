@@ -11,6 +11,8 @@ import {
   peutActiverRappel,
   contenuRappelPourAujourdhui,
   avecDelaiMax,
+  enregistrerOuvertureDepuisNotification,
+  OUVERTURES_MAX,
   CONTENU_RAPPEL_PAR_DEFAUT,
 } from "../js/notifications.js";
 import { selectionDuJour } from "../js/gamification.js";
@@ -222,3 +224,39 @@ const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant
 }
 
 console.log("✅ tests notifications : OK");
+
+// enregistrerOuvertureDepuisNotification : journalise l'ouverture, bascule
+// sur Aujourd'hui, ne modifie jamais l'état reçu (session 33)
+{
+  const avant = {
+    points: 5,
+    activeTab: "profil",
+    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true, ouvertures: [] },
+  };
+  const maintenant = new Date("2026-09-23T19:02:00Z");
+  const apres = enregistrerOuvertureDepuisNotification(avant, 1, maintenant);
+  assert.equal(apres.activeTab, "aujourdhui");
+  assert.deepEqual(apres.notifications.ouvertures, [{ le: "2026-09-23T19:02:00.000Z", notificationId: 1 }]);
+  assert.equal(apres.notifications.actif, true);
+  assert.equal(apres.points, 5);
+  assert.equal(avant.activeTab, "profil");
+  assert.deepEqual(avant.notifications.ouvertures, []);
+}
+
+// Journal absent (état antérieur à la session 33) : créé à la volée
+{
+  const apres = enregistrerOuvertureDepuisNotification({ notifications: { actif: true } }, null, new Date("2026-09-23T19:00:00Z"));
+  assert.equal(apres.notifications.ouvertures.length, 1);
+  assert.equal(apres.notifications.ouvertures[0].notificationId, null);
+}
+
+// Journal plafonné : les plus anciennes ouvertures partent en premier
+{
+  let etat = { notifications: { ouvertures: [] } };
+  for (let i = 0; i < OUVERTURES_MAX + 5; i++) {
+    etat = enregistrerOuvertureDepuisNotification(etat, i, new Date(Date.UTC(2026, 0, 1 + i)));
+  }
+  assert.equal(etat.notifications.ouvertures.length, OUVERTURES_MAX);
+  assert.equal(etat.notifications.ouvertures[0].notificationId, 5);
+  assert.equal(etat.notifications.ouvertures.at(-1).notificationId, OUVERTURES_MAX + 4);
+}

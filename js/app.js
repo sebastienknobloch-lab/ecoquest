@@ -5,7 +5,11 @@ import { renderFoyer } from "./views/foyer.js";
 import { renderProfil } from "./views/profil.js";
 import { renderOnboarding } from "./views/onboarding.js";
 import { renderPermissionNotifications } from "./views/permission-notifications.js";
-import { doitProposerPermission } from "./notifications.js";
+import {
+  doitProposerPermission,
+  enregistrerOuvertureDepuisNotification,
+  ecouterOuverturesDepuisNotification,
+} from "./notifications.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
 import { installerGestionnaireErreurs, fusionnerErreursRecentes } from "./erreurs.js";
@@ -72,17 +76,29 @@ function persisterDepuisVue(nextState) {
 }
 
 function mettreAJourOngletActif() {
-  tabButtons.forEach((btn) => {
+  // Ouverture depuis une notification (session 33) : on l'enregistre (taux
+// d'action, session 34) et on affiche directement l'écran Aujourd'hui, geste
+// du rappel mis en avant. Pendant l'onboarding (cas théorique : aucun rappel
+// n'est programmé avant), on enregistre sans interrompre l'écran en cours.
+function surOuvertureDepuisNotification(notificationId) {
+  persist(enregistrerOuvertureDepuisNotification(state, notificationId));
+  if (!viewRoot || !state.onboarding?.termine) return;
+  if (tabBar) tabBar.hidden = false;
+  if (afficherPermissionSiNecessaire()) return;
+  afficherVueActive({ mettreEnAvantGesteDuRappel: true });
+}
+
+tabButtons.forEach((btn) => {
     const actif = btn.dataset.tab === state.activeTab;
     btn.classList.toggle("active", actif);
     btn.setAttribute("aria-current", actif ? "page" : "false");
   });
 }
 
-function afficherVueActive() {
+function afficherVueActive(options = {}) {
   if (!viewRoot) return;
   const vue = VUES[state.activeTab] || VUES.aujourdhui;
-  vue(viewRoot, state, persisterDepuisVue);
+  vue(viewRoot, state, persisterDepuisVue, options);
   mettreAJourOngletActif();
 }
 
@@ -106,6 +122,18 @@ function demarrer() {
     return;
   }
   afficherApp();
+}
+
+// Ouverture depuis une notification (session 33) : on l'enregistre (taux
+// d'action, session 34) et on affiche directement l'écran Aujourd'hui, geste
+// du rappel mis en avant. Pendant l'onboarding (cas théorique : aucun rappel
+// n'est programmé avant), on enregistre sans interrompre l'écran en cours.
+function surOuvertureDepuisNotification(notificationId) {
+  persist(enregistrerOuvertureDepuisNotification(state, notificationId));
+  if (!viewRoot || !state.onboarding?.termine) return;
+  if (tabBar) tabBar.hidden = false;
+  if (afficherPermissionSiNecessaire()) return;
+  afficherVueActive({ mettreEnAvantGesteDuRappel: true });
 }
 
 tabButtons.forEach((btn) => {
@@ -171,6 +199,7 @@ function initServiceWorker() {
 installerGestionnaireErreurs(() => state, persist);
 
 demarrer();
+ecouterOuverturesDepuisNotification(surOuvertureDepuisNotification);
 initServiceWorker();
 
 if (debugDemandeParUrl()) {

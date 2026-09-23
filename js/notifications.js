@@ -263,3 +263,49 @@ export function contenuRappelPourAujourdhui(gestes, state, alea = Math.random) {
   const geste = gesteDuRappel(gestes, dateDuJour(), state.onboarding?.categoriesPrioritaires || []);
   return geste ? genererContenuRappel(geste, alea) : CONTENU_RAPPEL_PAR_DEFAUT;
 }
+
+// --- Ouverture de l'app depuis une notification (session 33) ---
+//
+// Plafond du journal des ouvertures : largement plus que les 30 jours dont
+// l'écran de debug a besoin (session 34), à raison d'un rappel par jour au
+// maximum, sans laisser grossir indéfiniment le localStorage.
+export const OUVERTURES_MAX = 90;
+
+// Fonction pure : ajoute une ouverture au journal (plafonné, les plus
+// anciennes partent en premier) et bascule sur l'onglet Aujourd'hui, où se
+// trouve le geste cité par la notification. Ne modifie jamais `state`.
+export function enregistrerOuvertureDepuisNotification(state, notificationId = null, maintenant = new Date()) {
+  const precedentes = state.notifications?.ouvertures || [];
+  const ouverture = { le: maintenant.toISOString(), notificationId };
+  return {
+    ...state,
+    activeTab: "aujourdhui",
+    notifications: {
+      ...state.notifications,
+      ouvertures: [...precedentes, ouverture].slice(-OUVERTURES_MAX),
+    },
+  };
+}
+
+// Appelle `callback(notificationId)` à chaque tap sur une notification de
+// l'app. Capacitor garde en mémoire l'événement d'un démarrage à froid
+// (app fermée, ouverte par le tap) jusqu'à ce qu'un écouteur soit branché :
+// le chargement du plugin depuis le CDN ne le fait donc pas perdre. Plugin
+// indisponible (navigateur de développement) : no-op silencieux.
+export async function ecouterOuverturesDepuisNotification(callback) {
+  const { plugin: LocalNotifications } = await chargerPlugin();
+  if (!LocalNotifications) return false;
+
+  try {
+    // Même piège que chargerPlugin() : la poignée renvoyée par addListener
+    // n'est jamais renvoyée telle quelle, seul un booléen sort d'ici.
+    await avecDelaiMax(
+      LocalNotifications.addListener("localNotificationActionPerformed", (evenement) => {
+        callback(evenement?.notification?.id ?? null);
+      })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
