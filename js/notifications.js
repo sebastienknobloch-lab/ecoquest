@@ -309,3 +309,92 @@ export async function ecouterOuverturesDepuisNotification(callback) {
     return false;
   }
 }
+
+// --- Tableau de bord des notifications, écran de debug (session 34) ---
+//
+// Un rappel local répété (`schedule.on` + `repeats`) est déclenché par
+// Android sans jamais réveiller l'app : elle ne peut pas savoir à quel
+// moment il a été affiché. Le nombre de rappels envoyés est donc reconstitué
+// à partir d'un journal des réglages (activé/désactivé, heure), chaque entrée
+// datant l'instant où un réglage a changé. C'est une estimation côté app :
+// une notification bloquée dans les paramètres Android reste comptée.
+export const JOURNAL_RAPPEL_MAX = 60;
+
+function reglageRappelActuel(state) {
+  return {
+    actif: state.notifications?.actif === true,
+    heure: state.onboarding?.heureRappel || "19:00",
+  };
+}
+
+// Fonction pure : ajoute une entrée { le, actif, heure } au journal si le
+// réglage du rappel a changé depuis la dernière entrée, sinon renvoie
+// `state` tel quel (même référence). Un rappel jamais activé ne crée aucune
+// entrée. Appelée à chaque persist() (js/app.js), ce qui couvre tous les
+// écrans qui modifient le réglage (permission, Profil) sans les toucher.
+export function suivreReglageRappel(state, maintenant = new Date()) {
+  const journal = state.notifications?.journalRappel || [];
+  const { actif, heure } = reglageRappelActuel(state);
+  const derniere = journal.at(-1);
+  if (!derniere && !actif) return state;
+  if (derniere && derniere.actif === actif && derniere.heure === heure) return state;
+  return {
+    ...state,
+    notifications: {
+      ...state.notifications,
+      journalRappel: [...journal, { le: maintenant.toISOString(), actif, heure }].slice(-JOURNAL_RAPPEL_MAX),
+    },
+  };
+}
+
+// Minuit (heure locale) du premier des `jours` derniers jours calendaires,
+// aujourd'hui compris.
+function debutPeriode(jours, maintenant) {
+  const debut = new Date(maintenant);
+  debut.setHours(0, 0, 0, 0);
+  debut.setDate(debut.getDate() - (jours - 1));
+  return debut;
+}
+
+// Nombre de rappels déclenchés sur les `jours` derniers jours calendaires.
+// Pour chaque jour et chaque entrée du journal, le rappel de cette entrée
+// compte s'il était actif, que son heure tombe pendant sa période de
+// validité (jusqu'à l'entrée suivante) et qu'elle est déjà passée.
+export function compterRappelsEnvoyes(journal = [], jours, maintenant = new Date()) {
+  const debut = debutPeriode(jours, maintenant);
+  let total = 0;
+  for (let i = 0; i < jours; i++) {
+    const jour = new Date(debut);
+    jour.setDate(debut.getDate() + i);
+    journal.forEach((entree, index) => {
+      if (!entree.actif) return;
+      const { heure, minute } = parserHeure(entree.heure);
+      const declenchement = new Date(jour);
+      declenchement.setHours(heure, minute, 0, 0);
+      const depuis = new Date(entree.le).getTime();
+      const suivante = journal[index + 1];
+      const jusqua = suivante ? new Date(suivante.le).getTime() : Infinity;
+      const t = declenchement.getTime();
+      if (t >= depuis && t < jusqua && t <= maintenant.getTime()) total++;
+    });
+  }
+  return total;
+}
+
+export function compterOuvertures(ouvertures = [], jours, maintenant = new Date()) {
+  const debut = debutPeriode(jours, maintenant).getTime();
+  return ouvertures.filter((o) => {
+    const t = new Date(o.le).getTime();
+    return t >= debut && t <= maintenant.getTime();
+  }).length;
+}
+
+// Taux d'action = ouvertures depuis une notification / rappels envoyés,
+// plafonné à 1 (l'estimation des envois peut sous-compter, par exemple un
+// rappel programmé avant la mise en place du journal). `null` sans envoi.
+export function statistiquesNotifications(state, jours, maintenant = new Date()) {
+  const envoyees = compterRappelsEnvoyes(state.notifications?.journalRappel, jours, maintenant);
+  const ouvertes = compterOuvertures(state.notifications?.ouvertures, jours, maintenant);
+  const tauxAction = envoyees === 0 ? null : Math.min(1, ouvertes / envoyees);
+  return { envoyees, ouvertes, tauxAction };
+}

@@ -13,7 +13,7 @@ function etatValide() {
     joker: { disponible: 1, semaine: "2026-W01", dejaUtilise: false },
     erreurs: [],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "19:00" },
-    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true, ouvertures: [] },
+    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true, ouvertures: [], journalRappel: [] },
   };
 }
 
@@ -113,6 +113,18 @@ function etatValide() {
   assert.equal(avec("hier"), false);
   assert.equal(avec([{ notificationId: 1 }]), false);
   assert.equal(avec(["2026-09-23"]), false);
+}
+
+// validerEtat : `notifications.journalRappel` (session 34) optionnel, mais
+// rejeté s'il est mal formé
+{
+  const { journalRappel, ...notifications } = etatValide().notifications;
+  assert.equal(validerEtat({ ...etatValide(), notifications }), true);
+  const avec = (journal) => validerEtat({ ...etatValide(), notifications: { ...notifications, journalRappel: journal } });
+  assert.equal(avec([{ le: "2026-09-24T10:00:00.000Z", actif: true, heure: "19:00" }]), true);
+  assert.equal(avec("hier"), false);
+  assert.equal(avec([{ le: "2026-09-24T10:00:00.000Z", actif: "oui", heure: "19:00" }]), false);
+  assert.equal(avec([{ le: "2026-09-24T10:00:00.000Z", actif: true }]), false);
 }
 
 // importerEtatJSON : JSON syntaxiquement invalide → rejeté avec un message, sans exception

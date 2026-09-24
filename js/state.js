@@ -23,11 +23,16 @@ export const ONBOARDING_PAR_DEFAUT = {
 // depuis une notification (session 33), la plus récente en dernier, plafonnée
 // (voir OUVERTURES_MAX dans js/notifications.js). Sert au taux d'action de
 // l'écran de debug (session 34).
+// journalRappel : une entrée { le, actif, heure } à chaque changement de
+// réglage du rappel (session 34, voir suivreReglageRappel dans
+// js/notifications.js). Sert à estimer les rappels envoyés sur l'écran de
+// debug, l'app n'étant jamais réveillée par un rappel répété.
 export const NOTIFICATIONS_PAR_DEFAUT = {
   permissionDemandee: false,
   permissionAccordee: null,
   actif: false,
   ouvertures: [],
+  journalRappel: [],
 };
 
 // Toute nouvelle propriété doit avoir une valeur par défaut ici
@@ -198,6 +203,15 @@ function estOuverturesValide(valeur) {
   );
 }
 
+function estJournalRappelValide(valeur) {
+  return (
+    Array.isArray(valeur) &&
+    valeur.every(
+      (e) => estObjetSimple(e) && typeof e.le === "string" && typeof e.actif === "boolean" && typeof e.heure === "string"
+    )
+  );
+}
+
 function estNotificationsValide(valeur) {
   return (
     estObjetSimple(valeur) &&
@@ -207,7 +221,9 @@ function estNotificationsValide(valeur) {
     // même règle pour `onboarding` et `notifications` eux-mêmes ci-dessus).
     (valeur.actif === undefined || typeof valeur.actif === "boolean") &&
     // Optionnel pour la même raison (ajouté en session 33).
-    (valeur.ouvertures === undefined || estOuverturesValide(valeur.ouvertures))
+    (valeur.ouvertures === undefined || estOuverturesValide(valeur.ouvertures)) &&
+    // Optionnel pour la même raison (ajouté en session 34).
+    (valeur.journalRappel === undefined || estJournalRappelValide(valeur.journalRappel))
   );
 }
 

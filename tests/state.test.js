@@ -165,7 +165,7 @@ const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT, NOTIFICATIONS_P
       { type: "erreur", message: "boom", source: "app.js", ligne: 1, colonne: 2, pile: null, horodatage: "2026-05-01T10:00:00.000Z" },
     ],
     onboarding: { termine: true, prenom: "Alex", categoriesPrioritaires: ["energie", "dechets", "numerique"], heureRappel: "20:30" },
-    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true, ouvertures: [] },
+    notifications: { permissionDemandee: true, permissionAccordee: true, actif: true, ouvertures: [], journalRappel: [] },
   };
   saveState(etatOriginal);
   const etatRelu = loadState();
@@ -237,6 +237,8 @@ const { loadState, saveState, dateDuJour, ONBOARDING_PAR_DEFAUT, NOTIFICATIONS_P
   assert.equal(etat.notifications.actif, false);
   // Migration douce (session 33) : journal des ouvertures créé vide
   assert.deepEqual(etat.notifications.ouvertures, []);
+  // Migration douce (session 34) : journal des réglages du rappel créé vide
+  assert.deepEqual(etat.notifications.journalRappel, []);
 }
 
 // Migration douce (session 32) : `actif` n'existait pas avant cette version.
