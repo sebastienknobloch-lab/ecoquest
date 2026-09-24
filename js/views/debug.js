@@ -5,6 +5,11 @@
 // embarquée (`?debug=1`, ou 5 taps sur le numéro de version en Profil).
 import { loadState } from "../state.js";
 import { MAX_ERREURS_STOCKEES } from "../erreurs.js";
+import { statistiquesNotifications } from "../notifications.js";
+
+// Seuil du jalon S38 (ROADMAP.md) : sous 20 % de taux d'action, le problème
+// est le contenu du rappel, pas la technique.
+const SEUIL_TAUX_ACTION = 0.2;
 
 function formaterHorodatage(horodatageISO) {
   try {
@@ -18,6 +23,67 @@ function formaterHorodatage(horodatageISO) {
 export function nomFichierExport(maintenant = new Date()) {
   const iso = maintenant.toISOString().replace(/[:.]/g, "-");
   return `ecoquest-erreurs-${iso}.json`;
+}
+
+// Isolé de tout accès DOM pour rester testable avec `node --test`.
+export function formaterTaux(taux) {
+  return taux === null ? "—" : `${Math.round(taux * 100)} %`;
+}
+
+// Tableau de bord du propriétaire, pas de l'utilisateur : visible uniquement
+// sur cet écran de debug, jamais ailleurs dans l'app.
+function creerSectionNotifications(state) {
+  const section = document.createElement("section");
+  section.className = "debug-section";
+
+  const titre = document.createElement("h3");
+  titre.textContent = "🔔 Notifications";
+  section.append(titre);
+
+  const periodes = [7, 30].map((jours) => ({ jours, stats: statistiquesNotifications(state, jours) }));
+
+  const table = document.createElement("table");
+  table.className = "debug-stats";
+  const entete = document.createElement("tr");
+  ["", "7 j", "30 j"].forEach((texte) => {
+    const th = document.createElement("th");
+    th.textContent = texte;
+    entete.append(th);
+  });
+  table.append(entete);
+
+  const lignes = [
+    ["Envoyées (estim.)", (s) => String(s.envoyees)],
+    ["Ouvertes depuis notif", (s) => String(s.ouvertes)],
+    ["Taux d'action", (s) => formaterTaux(s.tauxAction)],
+  ];
+  lignes.forEach(([libelle, valeur]) => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = libelle;
+    tr.append(th);
+    periodes.forEach(({ stats }) => {
+      const td = document.createElement("td");
+      td.textContent = valeur(stats);
+      if (libelle === "Taux d'action" && stats.tauxAction !== null && stats.tauxAction < SEUIL_TAUX_ACTION) {
+        td.className = "debug-stats--sous-seuil";
+      }
+      tr.append(td);
+    });
+    table.append(tr);
+  });
+  section.append(table);
+
+  const journal = state.notifications?.journalRappel || [];
+  const note = document.createElement("p");
+  note.className = "debug-note";
+  const suivi = journal.length
+    ? `Suivi des envois depuis le ${formaterHorodatage(journal[0].le)}.`
+    : "Rappel jamais activé : aucun envoi à compter.";
+  note.textContent = `${suivi} Rappel actuel : ${state.notifications?.actif ? `actif à ${state.onboarding?.heureRappel}` : "désactivé"}. Seuil S38 : ${formaterTaux(SEUIL_TAUX_ACTION)}.`;
+  section.append(note);
+
+  return section;
 }
 
 let overlayActif = null;
@@ -89,7 +155,7 @@ export function afficherEcranDebug() {
   entete.className = "debug-entete";
 
   const titre = document.createElement("h2");
-  titre.textContent = `🐞 Erreurs JS (${erreurs.length}/${MAX_ERREURS_STOCKEES})`;
+  titre.textContent = "🐞 Debug";
 
   const boutons = document.createElement("div");
   boutons.className = "debug-boutons";
@@ -126,7 +192,12 @@ export function afficherEcranDebug() {
 
   boutons.append(exporterBtn, provoquerBtn, fermerBtn);
   entete.append(titre, boutons);
-  overlay.append(entete);
+  overlay.append(entete, creerSectionNotifications(state));
+
+  const titreErreurs = document.createElement("h3");
+  titreErreurs.className = "debug-titre-section";
+  titreErreurs.textContent = `Erreurs JS (${erreurs.length}/${MAX_ERREURS_STOCKEES})`;
+  overlay.append(titreErreurs);
 
   if (erreurs.length === 0) {
     const vide = document.createElement("p");

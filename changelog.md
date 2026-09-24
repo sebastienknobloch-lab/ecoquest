@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-24 — Session 34 : tableau de bord des notifications sur l'écran de debug
+
+- Écran de debug (`js/views/debug.js`) : nouvelle section « 🔔 Notifications » au-dessus des erreurs JS, avec un tableau 7 j / 30 j : rappels envoyés (estimation), ouvertures depuis une notification, taux d'action (ouvertures / envois, plafonné à 100 %). Un taux sous le seuil du jalon S38 (20 %) s'affiche en rouge. Une note indique depuis quand les envois sont suivis et le réglage actuel du rappel. Visible uniquement sur l'écran de debug, jamais ailleurs dans l'app : c'est le tableau de bord du propriétaire.
+- Pourquoi une estimation : un rappel répété est déclenché par Android sans réveiller l'app, qui ne peut donc pas savoir quand il s'est affiché. Les envois sont reconstitués à partir d'un journal des réglages (`state.notifications.journalRappel`, une entrée `{ le, actif, heure }` à chaque changement, plafonné à 60). Une notification bloquée dans les paramètres Android reste comptée.
+- `js/notifications.js` : nouvelles fonctions pures `suivreReglageRappel(state, maintenant)`, `compterRappelsEnvoyes(journal, jours, maintenant)`, `compterOuvertures(ouvertures, jours, maintenant)` et `statistiquesNotifications(state, jours, maintenant)`. Les périodes sont les N derniers jours calendaires, aujourd'hui compris.
+- `js/app.js` : `persist()` passe par `suivreReglageRappel()`, ce qui couvre tous les écrans qui changent le réglage (permission, Profil) sans toucher à leur code. Au démarrage, un rappel déjà actif avant cette version ouvre le journal : les envois antérieurs ne sont pas comptés.
+- `js/state.js` : `journalRappel: []` ajouté à `NOTIFICATIONS_PAR_DEFAUT` (migration douce), optionnel mais validé à l'import.
+- `css/app.css` : styles du tableau ; les boutons de l'en-tête de debug passent à la ligne (« Fermer » débordait de l'écran à 390 px).
+- `sw.js` : cache renommé `ecoquest-shell-v30`.
+- Nouveaux tests dans `tests/notifications.test.js` (journal, envois avec activation tardive, désactivation, changement d'heure dans la journée, ouvertures par fenêtre, taux d'action), `tests/state.test.js` (migration) et `tests/state-export-import.test.js` (validation).
+
 ## 2026-09-23 — Session 33 : ouverture depuis une notification
 
 - `js/notifications.js` : nouvelle `ecouterOuverturesDepuisNotification(callback)`, branchée sur l'événement `localNotificationActionPerformed` du plugin Capacitor. L'événement d'un démarrage à froid (app fermée, ouverte par le tap) est gardé par Capacitor jusqu'au branchement de l'écouteur : le chargement du plugin depuis le CDN ne le fait pas perdre. Plugin indisponible (navigateur) : no-op silencieux.

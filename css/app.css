@@ -679,11 +679,59 @@ html, body {
 
 .debug-boutons {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
 .debug-boutons button:last-child {
   background: #5a5a5a;
+}
+
+.debug-section {
+  margin-bottom: 20px;
+}
+
+.debug-section h3,
+.debug-titre-section {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--eco-green-dark);
+}
+
+.debug-stats {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--eco-bg);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.debug-stats th,
+.debug-stats td {
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.debug-stats th:first-child {
+  text-align: left;
+  font-weight: normal;
+}
+
+.debug-stats td {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rouge foncé, contraste AA sur --eco-bg. */
+.debug-stats--sous-seuil {
+  color: #b71c1c;
+}
+
+.debug-note {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: #5a5a5a;
 }
 
 .debug-vide {

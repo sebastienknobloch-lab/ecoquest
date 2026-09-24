@@ -9,6 +9,7 @@ import {
   doitProposerPermission,
   enregistrerOuvertureDepuisNotification,
   ecouterOuverturesDepuisNotification,
+  suivreReglageRappel,
 } from "./notifications.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
@@ -46,8 +47,10 @@ function isInstalled() {
 // persist() de la vue, précisément au moment où on a le plus besoin de la
 // garder. `erreurs` est donc toujours reconstruit à partir de la version la
 // plus à jour plutôt que d'être pris tel quel dans nextState.
+// Tout changement de réglage du rappel, quel que soit l'écran d'origine, est
+// aussi noté dans le journal de l'écran de debug (session 34).
 function persist(nextState) {
-  state = { ...nextState, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) };
+  state = suivreReglageRappel({ ...nextState, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) });
   saveState(state);
 }
 
@@ -197,6 +200,10 @@ function initServiceWorker() {
 // l'écran de debug, jamais l'inverse. Sans Mac ni câble, c'est le seul moyen
 // de savoir qu'une erreur JS a eu lieu sur un téléphone donné.
 installerGestionnaireErreurs(() => state, persist);
+
+// Rappel déjà actif avant la session 34 : le journal démarre maintenant
+// (l'écran de debug affiche la date de début du suivi).
+if (suivreReglageRappel(state) !== state) persist(state);
 
 demarrer();
 ecouterOuverturesDepuisNotification(surOuvertureDepuisNotification);

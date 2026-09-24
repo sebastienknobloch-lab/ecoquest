@@ -13,6 +13,11 @@ import {
   avecDelaiMax,
   enregistrerOuvertureDepuisNotification,
   OUVERTURES_MAX,
+  suivreReglageRappel,
+  compterRappelsEnvoyes,
+  compterOuvertures,
+  statistiquesNotifications,
+  JOURNAL_RAPPEL_MAX,
   CONTENU_RAPPEL_PAR_DEFAUT,
 } from "../js/notifications.js";
 import { selectionDuJour } from "../js/gamification.js";
@@ -259,4 +264,82 @@ console.log("✅ tests notifications : OK");
   assert.equal(etat.notifications.ouvertures.length, OUVERTURES_MAX);
   assert.equal(etat.notifications.ouvertures[0].notificationId, 5);
   assert.equal(etat.notifications.ouvertures.at(-1).notificationId, OUVERTURES_MAX + 4);
+}
+
+// --- Tableau de bord de l'écran de debug (session 34) ---
+// Dates construites en heure locale : les tests ne dépendent pas du fuseau.
+const local = (j, h = 0, m = 0) => new Date(2026, 8, j, h, m);
+const entree = (date, actif, heure = "19:00") => ({ le: date.toISOString(), actif, heure });
+
+// suivreReglageRappel : rien à noter pour un rappel jamais activé
+{
+  const etat = { onboarding: { heureRappel: "19:00" }, notifications: { actif: false } };
+  assert.equal(suivreReglageRappel(etat, local(20)), etat);
+}
+
+// suivreReglageRappel : activation, puis même réglage (inchangé), puis changement d'heure
+{
+  let etat = { onboarding: { heureRappel: "19:00" }, notifications: { actif: true } };
+  etat = suivreReglageRappel(etat, local(20, 10));
+  assert.deepEqual(etat.notifications.journalRappel, [entree(local(20, 10), true)]);
+  assert.equal(suivreReglageRappel(etat, local(21)), etat);
+  etat = suivreReglageRappel({ ...etat, onboarding: { heureRappel: "08:30" } }, local(21, 12));
+  assert.deepEqual(etat.notifications.journalRappel.at(-1), entree(local(21, 12), true, "08:30"));
+  etat = suivreReglageRappel({ ...etat, notifications: { ...etat.notifications, actif: false } }, local(22));
+  assert.equal(etat.notifications.journalRappel.length, 3);
+  assert.equal(etat.notifications.journalRappel.at(-1).actif, false);
+}
+
+// suivreReglageRappel : journal plafonné
+{
+  let etat = { onboarding: { heureRappel: "19:00" }, notifications: { actif: true } };
+  for (let i = 0; i < JOURNAL_RAPPEL_MAX + 5; i++) {
+    etat = suivreReglageRappel({ ...etat, notifications: { ...etat.notifications, actif: i % 2 === 0 } }, local(1, 0, i));
+  }
+  assert.equal(etat.notifications.journalRappel.length, JOURNAL_RAPPEL_MAX);
+}
+
+// compterRappelsEnvoyes : actif depuis longtemps, rappel du jour pas encore passé
+{
+  const journal = [entree(local(1), true)];
+  assert.equal(compterRappelsEnvoyes(journal, 7, local(24, 18)), 6);
+  assert.equal(compterRappelsEnvoyes(journal, 7, local(24, 19)), 7);
+  assert.equal(compterRappelsEnvoyes(journal, 30, local(24, 20)), 24); // du 1er au 24
+  assert.equal(compterRappelsEnvoyes([], 7, local(24, 20)), 0);
+}
+
+// compterRappelsEnvoyes : activé après l'heure du jour, puis désactivé
+{
+  const journal = [entree(local(20, 19, 30), true), entree(local(23, 12), false)];
+  // 21 et 22 seulement (le 20 : activé après 19 h ; le 23 : désactivé avant 19 h)
+  assert.equal(compterRappelsEnvoyes(journal, 7, local(24, 22)), 2);
+}
+
+// compterRappelsEnvoyes : changement d'heure en cours de journée, les deux rappels partent
+{
+  const journal = [entree(local(1), true, "08:00"), entree(local(24, 9), true, "20:00")];
+  assert.equal(compterRappelsEnvoyes(journal, 1, local(24, 21)), 2);
+  assert.equal(compterRappelsEnvoyes(journal, 1, local(24, 19)), 1);
+}
+
+// compterOuvertures : uniquement dans la fenêtre des N derniers jours calendaires
+{
+  const ouvertures = [local(10, 19, 5), local(18, 19, 1), local(24, 19, 2)].map((d) => ({ le: d.toISOString(), notificationId: 1 }));
+  assert.equal(compterOuvertures(ouvertures, 7, local(24, 20)), 2);
+  assert.equal(compterOuvertures(ouvertures, 30, local(24, 20)), 3);
+  assert.equal(compterOuvertures(undefined, 7, local(24, 20)), 0);
+}
+
+// statistiquesNotifications : taux d'action, null sans envoi, plafonné à 100 %
+{
+  const etat = {
+    notifications: {
+      journalRappel: [entree(local(1), true)],
+      ouvertures: [local(23, 19, 1), local(24, 19, 1)].map((d) => ({ le: d.toISOString(), notificationId: 1 })),
+    },
+  };
+  assert.deepEqual(statistiquesNotifications(etat, 7, local(24, 20)), { envoyees: 7, ouvertes: 2, tauxAction: 2 / 7 });
+  assert.deepEqual(statistiquesNotifications({ notifications: {} }, 7, local(24, 20)), { envoyees: 0, ouvertes: 0, tauxAction: null });
+  const trop = { notifications: { journalRappel: [entree(local(24, 10), true)], ouvertures: etat.notifications.ouvertures } };
+  assert.equal(statistiquesNotifications(trop, 7, local(24, 20)).tauxAction, 1);
 }
