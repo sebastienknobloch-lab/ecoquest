@@ -347,6 +347,41 @@ export function suivreReglageRappel(state, maintenant = new Date()) {
   };
 }
 
+// Union de deux journaux datés (`le`, ISO) : entrées identiques dédoublonnées,
+// ordre chronologique, plafond appliqué en retirant les plus anciennes.
+function fusionnerJournal(actuel = [], suivant = [], max) {
+  const vues = new Set();
+  const entrees = [];
+  for (const entree of [...actuel, ...suivant]) {
+    const cle = JSON.stringify(entree);
+    if (vues.has(cle)) continue;
+    vues.add(cle);
+    entrees.push(entree);
+  }
+  entrees.sort((a, b) => (a.le < b.le ? -1 : a.le > b.le ? 1 : 0));
+  return entrees.slice(-max);
+}
+
+// Fonction pure appelée par persist() (js/app.js). Une vue reçoit l'état au
+// rendu et peut persister bien plus tard à partir de cette copie (Profil :
+// deux réglages de suite) : ses `ouvertures` et `journalRappel` peuvent donc
+// manquer des entrées ajoutées entre-temps par persist() lui-même. Ces deux
+// journaux ne font que grandir : on garde l'union de l'état courant et de
+// l'état envoyé, pour ne perdre ni une entrée récente ni une nouvelle
+// ouverture. Le reste de `etatSuivant` est pris tel quel.
+export function fusionnerJournauxNotifications(etatActuel, etatSuivant) {
+  const actuelles = etatActuel?.notifications || {};
+  const suivantes = etatSuivant.notifications || {};
+  return {
+    ...etatSuivant,
+    notifications: {
+      ...suivantes,
+      ouvertures: fusionnerJournal(actuelles.ouvertures, suivantes.ouvertures, OUVERTURES_MAX),
+      journalRappel: fusionnerJournal(actuelles.journalRappel, suivantes.journalRappel, JOURNAL_RAPPEL_MAX),
+    },
+  };
+}
+
 // Minuit (heure locale) du premier des `jours` derniers jours calendaires,
 // aujourd'hui compris.
 function debutPeriode(jours, maintenant) {

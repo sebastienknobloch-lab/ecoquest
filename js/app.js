@@ -10,6 +10,7 @@ import {
   enregistrerOuvertureDepuisNotification,
   ecouterOuverturesDepuisNotification,
   suivreReglageRappel,
+  fusionnerJournauxNotifications,
   programmerRappelQuotidien,
   contenuRappelPourAujourdhui,
 } from "./notifications.js";
@@ -49,10 +50,16 @@ function isInstalled() {
 // persist() de la vue, précisément au moment où on a le plus besoin de la
 // garder. `erreurs` est donc toujours reconstruit à partir de la version la
 // plus à jour plutôt que d'être pris tel quel dans nextState.
+// Même règle pour `notifications.ouvertures` et `notifications.journalRappel`
+// (fusionnerJournauxNotifications, js/notifications.js) : Profil persiste
+// depuis sa copie, qui ignore l'entrée de journal ajoutée par le persist()
+// précédent. La fusion passe avant suivreReglageRappel(), pour que le
+// nouveau réglage soit comparé à la vraie dernière entrée.
 // Tout changement de réglage du rappel, quel que soit l'écran d'origine, est
 // aussi noté dans le journal de l'écran de debug (session 34).
 function persist(nextState) {
-  state = suivreReglageRappel({ ...nextState, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) });
+  const fusionne = fusionnerJournauxNotifications(state, nextState);
+  state = suivreReglageRappel({ ...fusionne, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) });
   saveState(state);
 }
 
