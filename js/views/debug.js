@@ -6,6 +6,7 @@
 import { loadState } from "../state.js";
 import { MAX_ERREURS_STOCKEES } from "../erreurs.js";
 import { statistiquesNotifications } from "../notifications.js";
+import { partagerOuTelecharger } from "../telechargement.js";
 
 // Seuil du jalon S38 (ROADMAP.md) : sous 20 % de taux d'action, le problème
 // est le contenu du rappel, pas la technique.
@@ -95,16 +96,13 @@ export function fermerEcranDebug() {
   }
 }
 
-function exporterErreurs(erreurs) {
-  const blob = new Blob([JSON.stringify(erreurs, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const lien = document.createElement("a");
-  lien.href = url;
-  lien.download = nomFichierExport();
-  document.body.append(lien);
-  lien.click();
-  lien.remove();
-  URL.revokeObjectURL(url);
+// Même chemin que la sauvegarde de Profil (partage natif, puis
+// téléchargement) : voir js/telechargement.js.
+async function exporterErreurs(erreurs, afficherMessage) {
+  const resultat = await partagerOuTelecharger(JSON.stringify(erreurs, null, 2), nomFichierExport());
+  if (resultat === "echec") {
+    afficherMessage("L'export n'a pas fonctionné sur cet appareil. Réessaie depuis Chrome, hors de l'application installée.");
+  }
 }
 
 function creerLigneErreur(erreur) {
@@ -164,7 +162,18 @@ export function afficherEcranDebug() {
   exporterBtn.type = "button";
   exporterBtn.textContent = "Exporter";
   exporterBtn.disabled = erreurs.length === 0;
-  exporterBtn.addEventListener("click", () => exporterErreurs(state.erreurs || []));
+  const exportMessage = document.createElement("p");
+  exportMessage.className = "debug-export-message";
+  exportMessage.setAttribute("role", "alert");
+  exportMessage.hidden = true;
+
+  exporterBtn.addEventListener("click", () => {
+    exportMessage.hidden = true;
+    exporterErreurs(state.erreurs || [], (texte) => {
+      exportMessage.textContent = texte;
+      exportMessage.hidden = false;
+    });
+  });
 
   // Sans Mac ni câble, il n'y a pas de console de développeur fiable pour
   // provoquer une erreur JS à la main sur un téléphone (les erreurs tapées
@@ -191,7 +200,7 @@ export function afficherEcranDebug() {
   fermerBtn.addEventListener("click", fermerEcranDebug);
 
   boutons.append(exporterBtn, provoquerBtn, fermerBtn);
-  entete.append(titre, boutons);
+  entete.append(titre, boutons, exportMessage);
   overlay.append(entete, creerSectionNotifications(state));
 
   const titreErreurs = document.createElement("h3");

@@ -687,6 +687,12 @@ html, body {
   background: #5a5a5a;
 }
 
+.debug-export-message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b3261e;
+}
+
 .debug-section {
   margin-bottom: 20px;
 }
