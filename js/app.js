@@ -1,4 +1,4 @@
-import { loadState, saveState } from "./state.js";
+import { loadState, saveState, dateDuJour } from "./state.js";
 import { renderAujourdhui } from "./views/aujourdhui.js";
 import { renderDefis } from "./views/defis.js";
 import { renderFoyer } from "./views/foyer.js";
@@ -11,8 +11,7 @@ import {
   ecouterOuverturesDepuisNotification,
   suivreReglageRappel,
   fusionnerJournauxNotifications,
-  programmerRappelQuotidien,
-  contenuRappelPourAujourdhui,
+  programmerRappels,
 } from "./notifications.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
@@ -57,10 +56,16 @@ function isInstalled() {
 // nouveau réglage soit comparé à la vraie dernière entrée.
 // Tout changement de réglage du rappel, quel que soit l'écran d'origine, est
 // aussi noté dans le journal de l'écran de debug (session 34).
+// Enfin, tout changement qui modifie le plan des rappels (réglage, série,
+// premier geste du jour) les reprogramme : c'est ce qui annule l'alerte
+// « série en danger » de 20 h dès qu'un geste est validé (session 35).
 function persist(nextState) {
+  const avant = clePlanification(state);
   const fusionne = fusionnerJournauxNotifications(state, nextState);
   state = suivreReglageRappel({ ...fusionne, erreurs: fusionnerErreursRecentes(state.erreurs, nextState.erreurs) });
   saveState(state);
+  const apres = clePlanification(state);
+  if (apres !== avant) reprogrammerRappels();
 }
 
 // Si l'écran de demande d'autorisation notifications (session 30) doit
@@ -202,30 +207,56 @@ installerGestionnaireErreurs(() => state, persist);
 // (l'écran de debug affiche la date de début du suivi).
 if (suivreReglageRappel(state) !== state) persist(state);
 
-// Le rappel est répété par Android avec le même title/body : sans
-// reprogrammation, il citerait dès le lendemain un geste qui n'est plus le
-// geste du jour (selectionDuJour est semée par la date). On le reprogramme
-// donc à chaque démarrage avec le contenu du jour. Même identifiant, et
-// programmerRappelQuotidien annule avant de reprogrammer : jamais deux
-// rappels. Rappel inactif ou catalogue indisponible : on ne touche à rien.
-async function reprogrammerRappelAuDemarrage() {
-  if (state.notifications?.actif !== true) return;
-  let gestes;
-  try {
-    const reponse = await fetch("data/gestes.json");
-    if (!reponse.ok) throw new Error("gestes.json indisponible");
-    gestes = await reponse.json();
-  } catch {
-    return;
+// Tout ce dont dépend planifierRappels (js/notifications.js). La date y
+// figure pour que le premier persist() après minuit reprogramme aussi.
+// Rappel inactif avant comme après : clé constante, rien à reprogrammer (et
+// aucun chargement du plugin).
+function clePlanification(s) {
+  if (s.notifications?.actif !== true) return "inactif";
+  const aujourdhui = dateDuJour();
+  return JSON.stringify([
+    s.onboarding?.heureRappel,
+    s.onboarding?.categoriesPrioritaires,
+    s.streak,
+    s.joker,
+    aujourdhui,
+    (s.gestesCochesParDate?.[aujourdhui] || []).length > 0,
+  ]);
+}
+
+// Catalogue partagé par toutes les reprogrammations, chargé une seule fois
+// (rechargé seulement après un échec).
+let catalogueGestes = null;
+
+function chargerCatalogueGestes() {
+  if (!catalogueGestes) {
+    catalogueGestes = fetch("data/gestes.json")
+      .then((reponse) => (reponse.ok ? reponse.json() : []))
+      .then((gestes) => (Array.isArray(gestes) ? gestes : []))
+      .catch(() => []);
+    catalogueGestes.then((gestes) => {
+      if (gestes.length === 0) catalogueGestes = null;
+    });
   }
-  if (!Array.isArray(gestes) || gestes.length === 0) return;
-  const heureRappel = state.onboarding?.heureRappel || "19:00";
-  const contenu = contenuRappelPourAujourdhui(gestes, state);
-  if (contenu) await programmerRappelQuotidien(heureRappel, contenu);
+  return catalogueGestes;
+}
+
+// Les reprogrammations sont mises en file : deux appels rapprochés (réglage
+// puis validation) ne s'entremêlent jamais entre annulation et
+// programmation. Chacune lit l'état le plus récent au moment où elle part.
+let fileReprogrammation = Promise.resolve();
+
+function reprogrammerRappels() {
+  fileReprogrammation = fileReprogrammation
+    .then(async () => programmerRappels(state, await chargerCatalogueGestes()))
+    .catch(() => {});
+  return fileReprogrammation;
 }
 
 demarrer();
-reprogrammerRappelAuDemarrage();
+// Au démarrage : contenu du jour et alerte « série en danger » à jour.
+// Rappel inactif : rien à faire (et aucun chargement du plugin).
+if (state.notifications?.actif === true) reprogrammerRappels();
 ecouterOuverturesDepuisNotification(surOuvertureDepuisNotification);
 initServiceWorker();
 

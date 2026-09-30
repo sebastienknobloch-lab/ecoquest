@@ -5,24 +5,11 @@
 // state.notifications.permissionDemandee passe à true dans les deux cas —
 // jamais reproposé ensuite (voir CLAUDE.md, un seul essai par utilisateur).
 //
-// Accepter programme aussitôt le rappel quotidien (branchement session 32,
-// voir changelog.md session 31) : c'est le seul moment où l'autorisation
-// système vient d'être obtenue, inutile d'attendre un premier passage par
-// l'écran Profil pour que « le cœur du produit » (CLAUDE.md) commence à
-// sonner. Le catalogue n'est chargé qu'à l'acceptation, jamais au montage :
-// inutile de le récupérer pour l'issue la plus fréquente d'un premier essai,
-// le refus.
-import { demanderPermissionNotifications, programmerRappelQuotidien, contenuRappelPourAujourdhui } from "../notifications.js";
-
-async function chargerCatalogue() {
-  try {
-    const reponse = await fetch("data/gestes.json");
-    if (!reponse.ok) throw new Error("gestes.json indisponible");
-    return await reponse.json();
-  } catch {
-    return [];
-  }
-}
+// Accepter active aussitôt le rappel quotidien : `actif` passe à true, et
+// persist() (js/app.js) programme les rappels dès cet enregistrement
+// (session 35) — inutile d'attendre un premier passage par l'écran Profil
+// pour que « le cœur du produit » (CLAUDE.md) commence à sonner.
+import { demanderPermissionNotifications } from "../notifications.js";
 
 export function renderPermissionNotifications(container, state, onTermine) {
   container.innerHTML = "";
@@ -62,23 +49,13 @@ export function renderPermissionNotifications(container, state, onTermine) {
   accepterBtn.addEventListener("click", async () => {
     refuserBtn.disabled = true;
     accepterBtn.disabled = true;
-    // Filet de sécurité : demanderPermissionNotifications() et
-    // programmerRappelQuotidien() ne lèvent normalement jamais (voir
-    // js/notifications.js, avecDelaiMax), mais un écran qui reste bloqué sur
+    // Filet de sécurité : demanderPermissionNotifications() ne lève
+    // normalement jamais (voir js/notifications.js, avecDelaiMax), mais un écran qui reste bloqué sur
     // "Activer les rappels" sans jamais avancer est pire qu'un rappel non
     // programmé — mieux vaut continuer sans rappel que de coincer l'écran.
     let permissionAccordee = false;
     try {
       permissionAccordee = await demanderPermissionNotifications();
-      if (permissionAccordee) {
-        // Catalogue indisponible : `actif` est tout de même enregistré par
-        // terminer(), le rappel sera programmé au prochain démarrage.
-        const gestes = await chargerCatalogue();
-        const contenu = contenuRappelPourAujourdhui(gestes, state);
-        if (contenu) {
-          await programmerRappelQuotidien(state.onboarding?.heureRappel || "19:00", contenu);
-        }
-      }
     } catch {
       // On continue quand même : voir commentaire ci-dessus.
     }

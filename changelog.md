@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-30 — Session 35 : série en danger, un seul rappel par jour
+
+- Contrainte technique : un rappel répété par Android (`schedule.on` + `repeats`) ne peut pas sauter un jour. Pour qu'une alerte de 20 h puisse *remplacer* le rappel du jour (jamais deux notifications le même jour), le rappel devient une notification unique par jour, programmée sur les 14 prochains jours (`JOURS_PROGRAMMES`) et reprogrammée à chaque démarrage. Chaque jour cite désormais le geste de ce jour-là. Conséquence assumée : sans aucune ouverture de l'app pendant 14 jours, plus aucun rappel.
+- `js/notifications.js` :
+  - `serieEnDangerLe(state, dateISO)` : série en cours et aucun geste validé ce jour-là, alors qu'un geste suffirait à la prolonger (dernier jour validé la veille, ou l'avant-veille avec un joker disponible, recharge hebdomadaire comprise).
+  - `genererContenuSerieEnDanger(geste, jours)` : 3 variantes au ton positif (« 🔥 Ta série de 5 jours continue ce soir ? »), avec le geste du jour et son chiffre (estimation).
+  - `planifierRappels(state, gestes, maintenant)` : au plus une notification par jour. Rappel du jour déjà parti : plus rien ce jour-là. Série en danger : l'alerte de 20 h remplace le rappel aujourd'hui (app ouverte sans validation), ou un jour à venir si le rappel est réglé à 20 h ou plus tard. Sinon, rappel quotidien.
+  - `programmerRappels()` / `annulerRappels()` remplacent `programmerRappelQuotidien()` / `annulerRappelQuotidien()`. L'ancien rappel répété (id 1) est annulé au passage. Ids distincts pour l'alerte (200+) et le rappel (100+), visibles dans le journal des ouvertures.
+- `js/app.js` : `persist()` reprogramme dès qu'un élément du plan change (réglage, catégories, série, joker, premier geste du jour, date). L'alerte de 20 h est donc annulée dès le premier geste validé. Catalogue chargé une fois, reprogrammations mises en file.
+- `js/views/profil.js`, `js/views/permission-notifications.js` : ne programment plus eux-mêmes, `persist()` s'en charge (corrige au passage le cas « interrupteur basculé avant le chargement du catalogue »).
+- `js/state.js` : `dateDuJour(d)` accepte une date (par défaut aujourd'hui).
+- Écran de debug : l'estimation des envois compte toujours une notification par jour ; un jour d'alerte est compté à l'heure du rappel.
+- `sw.js` : cache renommé `ecoquest-shell-v35`.
+- Tests (`tests/notifications.test.js`) : série en danger (veille, joker, joker épuisé ou rechargé, série cassée), contenu, plan à 10 h / 19 h 30 / 20 h 30, rappel à 21 h (alerte les jours suivants sans ouvrir l'app), changement de mois, jamais deux notifications le même jour.
+
 ## 2026-09-30 — Nettoyage : copie morte de `surOuvertureDepuisNotification` retirée de `mettreAJourOngletActif()`
 
 - Artefact de merge des sessions 33/34 : `mettreAJourOngletActif()` (`js/app.js`) contenait une copie imbriquée complète de `surOuvertureDepuisNotification` (commentaire compris), jamais appelée. C'est la version de portée module qui est passée à `ecouterOuverturesDepuisNotification()`.

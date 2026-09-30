@@ -1,9 +1,9 @@
 // Rappel quotidien local (session 29 — voir CLAUDE.md : « le rappel quotidien
 // est le cœur du produit, pas un accessoire »).
 //
-// Le contenu variable du rappel arrive en session 31 : ce module programme/
-// annule un rappel générique à l'heure choisie (`state.onboarding.heureRappel`),
-// expose le calcul de sa prochaine échéance, et gère la demande d'autorisation
+// Ce module programme/annule les rappels à l'heure choisie
+// (`state.onboarding.heureRappel`) et l'alerte « série en danger » de 20 h
+// (session 35, voir planifierRappels), et gère la demande d'autorisation
 // (session 30 — voir CLAUDE.md : jamais au premier lancement, seulement après
 // la première validation de geste, un seul essai par utilisateur).
 //
@@ -13,16 +13,38 @@
 // empaquetée par Capacitor (voir CLAUDE.md, coquille Android). Toute
 // fonction de programmation devient alors un no-op silencieux plutôt
 // qu'une erreur.
-import { totalGestesValides, selectionDuJour } from "./gamification.js";
+import {
+  totalGestesValides,
+  selectionDuJour,
+  jourPrecedent,
+  semaineISO,
+  JOKERS_PAR_SEMAINE,
+} from "./gamification.js";
 import { dateDuJour } from "./state.js";
 const LOCAL_NOTIFICATIONS_MODULE_URLS = [
   "https://esm.sh/@capacitor/local-notifications@8",
   "https://cdn.jsdelivr.net/npm/@capacitor/local-notifications@8/+esm",
 ];
 
-// Identifiant fixe : reprogrammer le rappel (changement d'heure) écrase
-// toujours la même notification plutôt que d'en empiler une nouvelle.
-const ID_RAPPEL_QUOTIDIEN = 1;
+// Identifiants des notifications programmées. Depuis la session 35, le rappel
+// n'est plus une notification répétée par Android (id 1, toujours annulé
+// pour les installations antérieures) mais une notification unique par jour
+// sur les JOURS_PROGRAMMES prochains jours : un rappel répété ne peut pas
+// sauter un jour, or un jour où la série est en danger, l'alerte de 20 h
+// *remplace* le rappel du jour (jamais deux notifications le même jour).
+// Un id par jour et par type : l'écran de debug distingue ainsi une
+// ouverture depuis l'alerte « série en danger » d'une ouverture depuis le
+// rappel quotidien.
+const ID_RAPPEL_REPETE_ANCIEN = 1;
+const ID_BASE_RAPPEL = 100;
+const ID_BASE_SERIE_EN_DANGER = 200;
+
+// Fenêtre de programmation : reprogrammée à chaque démarrage et à chaque
+// changement qui la concerne (js/app.js). Un utilisateur qui n'ouvre plus
+// l'app du tout cesse d'être sollicité au bout de deux semaines.
+export const JOURS_PROGRAMMES = 14;
+
+export const HEURE_SERIE_EN_DANGER = "20:00";
 
 // "HH:MM" -> { heure, minute }. Ne valide pas le format : la seule source de
 // heureRappel est un <input type="time">, garanti bien formé (js/state.js).
@@ -90,54 +112,49 @@ async function chargerPlugin() {
   return { plugin: null };
 }
 
-// Annule le rappel quotidien s'il existe. Ne lève jamais d'erreur : rien à
-// annuler (première utilisation) ou plugin indisponible (navigateur de
-// développement) sont deux issues normales, sans conséquence pour l'appelant.
-export async function annulerRappelQuotidien() {
+function tousLesIdsProgrammables() {
+  const ids = [ID_RAPPEL_REPETE_ANCIEN];
+  for (let i = 0; i < JOURS_PROGRAMMES; i++) ids.push(ID_BASE_RAPPEL + i, ID_BASE_SERIE_EN_DANGER + i);
+  return ids;
+}
+
+// Annule tous les rappels et alertes programmés par l'app. Ne lève jamais
+// d'erreur : rien à annuler (première utilisation) ou plugin indisponible
+// (navigateur de développement) sont deux issues normales, sans conséquence
+// pour l'appelant.
+export async function annulerRappels() {
   const { plugin: LocalNotifications } = await chargerPlugin();
   if (!LocalNotifications) return false;
 
   try {
-    await avecDelaiMax(LocalNotifications.cancel({ notifications: [{ id: ID_RAPPEL_QUOTIDIEN }] }));
+    await avecDelaiMax(
+      LocalNotifications.cancel({ notifications: tousLesIdsProgrammables().map((id) => ({ id })) })
+    );
     return true;
   } catch {
     return false;
   }
 }
 
-// Programme (ou reprogramme) le rappel quotidien à l'heure choisie. Toujours
-// précédée d'une annulation explicite plutôt que d'un simple écrasement par id
-// : à la reprogrammation (changement d'heure en Profil, session 32), c'est ce
-// qui garantit qu'il ne reste jamais qu'un seul rappel programmé, même si
-// l'identifiant venait à varier plus tard (contenu par geste, session 31).
-//
-// `schedule.on` + `repeats: true` délègue la récurrence quotidienne au
-// système (Android reprogramme lui-même l'occurrence suivante après chaque
-// déclenchement) plutôt que de reprogrammer un `at` unique à chaque ouverture
-// de l'app — plus robuste si l'app reste fermée plusieurs jours.
-//
-// Aucun contenu par défaut : sans titre ni texte (catalogue indisponible,
-// voir contenuRappelPourAujourdhui), rien n'est programmé plutôt qu'un
-// rappel générique.
-export async function programmerRappelQuotidien(heureRappel, contenu) {
-  if (!contenu?.title || !contenu?.body) return false;
+// Reprogramme toute la fenêtre à partir de l'état : annulation explicite de
+// tout ce qui existait, puis programmation du plan (planifierRappels
+// ci-dessous). Rappel désactivé : tout est annulé, rien n'est reprogrammé.
+// Rappel actif mais catalogue indisponible : on ne touche à rien plutôt que
+// d'annuler sans remplacer — jamais de rappel générique non plus.
+export async function programmerRappels(state, gestes, maintenant = new Date()) {
+  const actif = state.notifications?.actif === true;
+  if (actif && (!Array.isArray(gestes) || gestes.length === 0)) return false;
   const { plugin: LocalNotifications } = await chargerPlugin();
   if (!LocalNotifications) return false;
 
-  await annulerRappelQuotidien();
+  await annulerRappels();
+  const plan = planifierRappels(state, gestes, maintenant);
+  if (plan.length === 0) return true;
 
-  const { heure, minute } = parserHeure(heureRappel);
   try {
     await avecDelaiMax(
       LocalNotifications.schedule({
-        notifications: [
-          {
-            id: ID_RAPPEL_QUOTIDIEN,
-            title: contenu.title,
-            body: contenu.body,
-            schedule: { on: { hour: heure, minute }, repeats: true },
-          },
-        ],
+        notifications: plan.map(({ id, title, body, at }) => ({ id, title, body, schedule: { at } })),
       })
     );
     return true;
@@ -240,6 +257,104 @@ export function gesteDuRappel(gestes, dateISO, categoriesPrioritaires = []) {
   return geste;
 }
 
+// --- Série en danger (session 35) ---
+//
+// La série est « en danger » un jour donné si elle est en cours et
+// qu'aucun geste n'a encore été validé ce jour-là, alors qu'un seul geste
+// suffirait à la prolonger : dernier jour validé la veille, ou l'avant-veille
+// avec un joker disponible (même règle que validerJourPourStreak dans
+// js/gamification.js, recharge hebdomadaire comprise). Fonction pure.
+export function serieEnDangerLe(state, dateISO) {
+  if ((state.gestesCochesParDate?.[dateISO] || []).length > 0) return false;
+  const streak = state.streak;
+  if (!streak || streak.actuel < 1 || !streak.dernierJourValide) return false;
+  const veille = jourPrecedent(dateISO);
+  if (streak.dernierJourValide === veille) return true;
+  if (streak.dernierJourValide !== jourPrecedent(veille)) return false;
+  const joker = state.joker || {};
+  const disponible = joker.semaine === semaineISO(dateISO) ? joker.disponible : JOKERS_PAR_SEMAINE;
+  return disponible > 0;
+}
+
+// Ton positif (voir CLAUDE.md : pas de culpabilisation) et toujours le
+// geste du jour avec son chiffre, comme le rappel quotidien.
+const VARIANTES_CONTENU_SERIE_EN_DANGER = [
+  (g, duree) => ({
+    title: `🔥 Ta série de ${duree} continue ce soir ?`,
+    body: `Un seul geste suffit : ${g.libelle}. Environ ${g.co2_evite_g} g de CO2 évités (estimation).`,
+  }),
+  (g, duree) => ({
+    title: `🔥 ${duree} de suite, bravo !`,
+    body: `Pour garder ta série, un geste ce soir : ${g.libelle} (≈ ${g.co2_evite_g} g de CO2 évités, estimation).`,
+  }),
+  (g, duree) => ({
+    title: "Ta série t'attend 🔥",
+    body: `${duree} déjà ! Ce soir, ${g.libelle} suffit : ≈ ${g.co2_evite_g} g de CO2 évités (estimation).`,
+  }),
+];
+
+export function genererContenuSerieEnDanger(geste, jours, alea = Math.random) {
+  const duree = `${jours} jour${jours > 1 ? "s" : ""}`;
+  const index = Math.floor(alea() * VARIANTES_CONTENU_SERIE_EN_DANGER.length);
+  return VARIANTES_CONTENU_SERIE_EN_DANGER[index](geste, duree);
+}
+
+// Plan des notifications des JOURS_PROGRAMMES prochains jours, aujourd'hui
+// compris : au plus une par jour, jamais deux. Fonction pure (maintenant et
+// alea injectables), testée dans tests/notifications.test.js.
+//
+// Pour chaque jour :
+// - rappel du jour déjà passé (aujourd'hui) : plus rien ce jour-là, le
+//   rappel a déjà été envoyé ;
+// - sinon, si la série est en danger ce jour-là, l'alerte de 20 h remplace
+//   le rappel quand celui-ci n'a pas encore atteint l'utilisateur :
+//   aujourd'hui (l'app vient d'être ouverte sans validation, le rappel n'a
+//   plus d'utilité pour la faire rouvrir), ou un jour à venir dont le rappel
+//   est réglé à 20 h ou plus tard. Un jour à venir dont le rappel sonne
+//   avant 20 h garde son rappel, seul de la journée ;
+// - sinon, le rappel quotidien à l'heure choisie.
+// Toute validation de geste reprogramme la fenêtre (js/app.js) : l'alerte
+// d'aujourd'hui disparaît dès le premier geste validé.
+export function planifierRappels(state, gestes, maintenant = new Date(), alea = Math.random) {
+  if (state.notifications?.actif !== true || !gestes || gestes.length === 0) return [];
+  const { heure, minute } = parserHeure(state.onboarding?.heureRappel || "19:00");
+  const danger = parserHeure(HEURE_SERIE_EN_DANGER);
+  const categories = state.onboarding?.categoriesPrioritaires || [];
+  const plan = [];
+
+  for (let i = 0; i < JOURS_PROGRAMMES; i++) {
+    const jour = new Date(maintenant);
+    jour.setHours(0, 0, 0, 0);
+    jour.setDate(jour.getDate() + i);
+    const dateISO = dateDuJour(jour);
+
+    const rappel = new Date(jour);
+    rappel.setHours(heure, minute, 0, 0);
+    if (rappel.getTime() <= maintenant.getTime()) continue;
+
+    const alerte = new Date(jour);
+    alerte.setHours(danger.heure, danger.minute, 0, 0);
+    const alerteRemplaceRappel =
+      alerte.getTime() > maintenant.getTime() &&
+      (i === 0 || alerte.getTime() <= rappel.getTime()) &&
+      serieEnDangerLe(state, dateISO);
+
+    const geste = gesteDuRappel(gestes, dateISO, categories);
+    if (!geste) continue;
+    if (alerteRemplaceRappel) {
+      plan.push({
+        id: ID_BASE_SERIE_EN_DANGER + i,
+        type: "serie-en-danger",
+        at: alerte,
+        ...genererContenuSerieEnDanger(geste, state.streak.actuel, alea),
+      });
+    } else {
+      plan.push({ id: ID_BASE_RAPPEL + i, type: "quotidien", at: rappel, ...genererContenuRappel(geste, alea) });
+    }
+  }
+  return plan;
+}
+
 // --- Réglages du rappel depuis l'écran Profil (session 32) ---
 //
 // Le réglage ne peut être activé que si l'autorisation système a déjà été
@@ -312,12 +427,13 @@ export async function ecouterOuverturesDepuisNotification(callback) {
 
 // --- Tableau de bord des notifications, écran de debug (session 34) ---
 //
-// Un rappel local répété (`schedule.on` + `repeats`) est déclenché par
-// Android sans jamais réveiller l'app : elle ne peut pas savoir à quel
+// Un rappel local est déclenché par Android sans jamais réveiller l'app : elle ne peut pas savoir à quel
 // moment il a été affiché. Le nombre de rappels envoyés est donc reconstitué
 // à partir d'un journal des réglages (activé/désactivé, heure), chaque entrée
 // datant l'instant où un réglage a changé. C'est une estimation côté app :
-// une notification bloquée dans les paramètres Android reste comptée.
+// une notification bloquée dans les paramètres Android reste comptée, et un
+// jour où l'alerte « série en danger » remplace le rappel (session 35) est
+// compté une fois, à l'heure du rappel plutôt qu'à 20 h.
 export const JOURNAL_RAPPEL_MAX = 60;
 
 function reglageRappelActuel(state) {
