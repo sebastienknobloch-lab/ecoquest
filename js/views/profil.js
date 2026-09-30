@@ -7,12 +7,7 @@ import {
   nombreGestesAVerifier,
 } from "../gamification.js";
 import { dateDuJour, exporterEtatJSON, importerEtatJSON } from "../state.js";
-import {
-  peutActiverRappel,
-  contenuRappelPourAujourdhui,
-  programmerRappelQuotidien,
-  annulerRappelQuotidien,
-} from "../notifications.js";
+import { peutActiverRappel } from "../notifications.js";
 import { APP_VERSION } from "../version.js";
 import { activerConsoleDebug, surveillerTapsVersion } from "../debug.js";
 import { afficherEcranDebug } from "./debug.js";
@@ -201,8 +196,9 @@ export function renderProfil(container, state, persist) {
     notifHeureInput.disabled = !notifToggle.checked;
 
     // Un seul tap sur l'interrupteur ou l'heure suffit : pas de confirmation
-    // intermédiaire, la reprogrammation (ou l'annulation) part aussitôt.
-    async function appliquerReglageNotifications() {
+    // intermédiaire. La reprogrammation (ou l'annulation) part aussitôt,
+    // déclenchée par persist() (js/app.js, session 35).
+    function appliquerReglageNotifications() {
       const heureRappel = notifHeureInput.value || state.onboarding?.heureRappel || "19:00";
       const actif = notifToggle.checked;
       const nouvelEtat = {
@@ -212,14 +208,6 @@ export function renderProfil(container, state, persist) {
       };
       persist(nouvelEtat);
       state = nouvelEtat;
-      if (actif) {
-        // Catalogue pas encore chargé : le réglage est enregistré ci-dessus,
-        // le rappel sera programmé au prochain démarrage (js/app.js).
-        const contenu = contenuRappelPourAujourdhui(catalogueGestes, state);
-        if (contenu) await programmerRappelQuotidien(heureRappel, contenu);
-      } else {
-        await annulerRappelQuotidien();
-      }
     }
 
     notifToggle.addEventListener("change", () => {

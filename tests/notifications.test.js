@@ -19,8 +19,12 @@ import {
   statistiquesNotifications,
   JOURNAL_RAPPEL_MAX,
   fusionnerJournauxNotifications,
+  serieEnDangerLe,
+  genererContenuSerieEnDanger,
+  planifierRappels,
+  JOURS_PROGRAMMES,
 } from "../js/notifications.js";
-import { selectionDuJour } from "../js/gamification.js";
+import { selectionDuJour, semaineISO } from "../js/gamification.js";
 import { dateDuJour } from "../js/state.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -420,4 +424,146 @@ const entree = (date, actif, heure = "19:00") => ({ le: date.toISOString(), acti
   const fusion = fusionnerJournauxNotifications({ notifications: { ouvertures: plein } }, { notifications: { ouvertures: [{ le: t(1).toISOString(), notificationId: 999 }] } });
   assert.equal(fusion.notifications.ouvertures.length, OUVERTURES_MAX);
   assert.equal(fusion.notifications.ouvertures.at(-1).notificationId, 999);
+}
+
+// --- Série en danger (session 35) ---
+{
+  const alea = () => 0;
+  // Mercredi 30/09/2026. Série de 5 jours, dernier geste validé la veille.
+  const etat = (surcharges = {}) => ({
+    gestesCochesParDate: {},
+    streak: { actuel: 5, dernierJourValide: "2026-09-29", dernierJourViaJoker: false, jokerUtiliseDansStreak: false },
+    joker: { disponible: 1, semaine: semaineISO("2026-09-30"), dejaUtilise: false },
+    onboarding: { heureRappel: "19:00", categoriesPrioritaires: [] },
+    notifications: { actif: true },
+    ...surcharges,
+  });
+  const a = (jour, h, m = 0) => new Date(2026, 8, jour, h, m, 0, 0);
+  const cle = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const unParJourAuPlus = (plan) => {
+    const jours = plan.map((n) => cle(n.at));
+    assert.equal(new Set(jours).size, jours.length, "jamais deux notifications le même jour");
+    assert.equal(new Set(plan.map((n) => n.id)).size, plan.length, "identifiants uniques");
+  };
+
+  // serieEnDangerLe : série en cours, rien validé aujourd'hui -> en danger.
+  assert.equal(serieEnDangerLe(etat(), "2026-09-30"), true);
+  // Un geste validé aujourd'hui -> plus en danger.
+  assert.equal(
+    serieEnDangerLe(etat({ gestesCochesParDate: { "2026-09-30": ["g1"] } }), "2026-09-30"),
+    false
+  );
+  // Pas de série en cours -> rien à sauver.
+  assert.equal(serieEnDangerLe(etat({ streak: { actuel: 0, dernierJourValide: null } }), "2026-09-30"), false);
+  // Série déjà cassée (dernier geste il y a 3 jours) -> pas en danger.
+  assert.equal(serieEnDangerLe(etat({ streak: { actuel: 5, dernierJourValide: "2026-09-27" } }), "2026-09-30"), false);
+  // Avant-veille + joker disponible cette semaine -> encore sauvable.
+  const avantVeille = { actuel: 5, dernierJourValide: "2026-09-28" };
+  assert.equal(serieEnDangerLe(etat({ streak: avantVeille }), "2026-09-30"), true);
+  // Avant-veille, joker déjà utilisé cette semaine -> série perdue.
+  assert.equal(
+    serieEnDangerLe(etat({ streak: avantVeille, joker: { disponible: 0, semaine: semaineISO("2026-09-30") } }), "2026-09-30"),
+    false
+  );
+  // Joker épuisé une semaine précédente : rechargé -> encore sauvable.
+  assert.equal(
+    serieEnDangerLe(etat({ streak: avantVeille, joker: { disponible: 0, semaine: "2026-W30" } }), "2026-09-30"),
+    true
+  );
+
+  // Contenu : durée de la série, geste du jour, chiffre, « estimation ».
+  const contenu = genererContenuSerieEnDanger(gesteTest, 5, alea);
+  assert.match(contenu.title, /5 jours/);
+  assert.match(contenu.body, /Éteindre la lumière/);
+  assert.match(contenu.body, /10 g de CO2/);
+  assert.match(contenu.body, /estimation/);
+  assert.match(genererContenuSerieEnDanger(gesteTest, 1, alea).title, /1 jour(?!s)/);
+  for (let i = 0; i < 3; i++) {
+    const c = genererContenuSerieEnDanger(gesteTest, 3, () => i / 3);
+    assert.ok(c.title && c.body.includes(gesteTest.libelle));
+  }
+
+  // Rappel désactivé ou catalogue vide : rien de programmé.
+  assert.deepEqual(planifierRappels(etat({ notifications: { actif: false } }), gestes, a(30, 10), alea), []);
+  assert.deepEqual(planifierRappels(etat(), [], a(30, 10), alea), []);
+
+  // 10 h, rien validé, série en danger, rappel à 19 h : aujourd'hui une seule
+  // notification, l'alerte de 20 h, qui remplace le rappel de 19 h.
+  {
+    const plan = planifierRappels(etat(), gestes, a(30, 10), alea);
+    unParJourAuPlus(plan);
+    assert.equal(plan.length, JOURS_PROGRAMMES);
+    assert.equal(plan[0].type, "serie-en-danger");
+    assert.equal(plan[0].at.getTime(), a(30, 20).getTime());
+    assert.match(plan[0].title, /5 jours/);
+    // Même geste que celui de l'écran Aujourd'hui.
+    assert.ok(plan[0].body.includes(selectionDuJour(gestes, "2026-09-30")[0].libelle));
+    // Jours suivants : rappel quotidien à 19 h (il sonne avant 20 h, il reste seul).
+    assert.ok(plan.slice(1).every((n) => n.type === "quotidien" && n.at.getHours() === 19));
+    // Chaque rappel cite le geste de son propre jour.
+    assert.ok(plan[1].body.includes(selectionDuJour(gestes, "2026-10-01")[0].libelle));
+  }
+
+  // Même situation mais un geste déjà validé : pas d'alerte, rappel normal.
+  {
+    const plan = planifierRappels(
+      etat({ gestesCochesParDate: { "2026-09-30": ["g1"] }, streak: { actuel: 6, dernierJourValide: "2026-09-30" } }),
+      gestes,
+      a(30, 10),
+      alea
+    );
+    unParJourAuPlus(plan);
+    assert.ok(plan.every((n) => n.type === "quotidien"));
+    assert.equal(plan[0].at.getTime(), a(30, 19).getTime());
+  }
+
+  // 19 h 30 : le rappel de 19 h est déjà parti -> plus rien aujourd'hui,
+  // même si la série est en danger (jamais deux notifications le même jour).
+  {
+    const plan = planifierRappels(etat(), gestes, a(30, 19, 30), alea);
+    unParJourAuPlus(plan);
+    assert.ok(plan.every((n) => cle(n.at) !== cle(a(30, 12))));
+    assert.equal(plan.length, JOURS_PROGRAMMES - 1);
+  }
+
+  // 20 h 30, rappel à 21 h : alerte passée, le rappel de 21 h reste le seul.
+  {
+    const plan = planifierRappels(etat({ onboarding: { heureRappel: "21:00" } }), gestes, a(30, 20, 30), alea);
+    assert.equal(plan[0].type, "quotidien");
+    assert.equal(plan[0].at.getTime(), a(30, 21).getTime());
+  }
+
+  // Rappel à 21 h, geste validé aujourd'hui : demain la série sera en danger
+  // à 20 h, avant le rappel -> l'alerte le remplace, même sans ouvrir l'app.
+  // Après-demain aussi (joker disponible). Le jour suivant, série perdue :
+  // rappel normal.
+  {
+    const plan = planifierRappels(
+      etat({
+        onboarding: { heureRappel: "21:00" },
+        gestesCochesParDate: { "2026-09-30": ["g1"] },
+        streak: { actuel: 6, dernierJourValide: "2026-09-30" },
+      }),
+      gestes,
+      a(30, 10),
+      alea
+    );
+    unParJourAuPlus(plan);
+    assert.deepEqual(
+      plan.slice(0, 4).map((n) => [n.type, n.at.getDate(), n.at.getHours()]),
+      [
+        ["quotidien", 30, 21],
+        ["serie-en-danger", 1, 20],
+        ["serie-en-danger", 2, 20],
+        ["quotidien", 3, 21],
+      ]
+    );
+  }
+
+  // Changement de mois : dates de la fenêtre correctes.
+  {
+    const plan = planifierRappels(etat({ streak: { actuel: 0, dernierJourValide: null } }), gestes, a(30, 8), alea);
+    assert.equal(plan[1].at.getMonth(), 9);
+    assert.equal(plan[1].at.getDate(), 1);
+  }
 }

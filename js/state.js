@@ -49,9 +49,10 @@ const DEFAULT_STATE = {
 };
 
 // Format AAAA-MM-JJ en heure locale (pas d'UTC, pour que "minuit" corresponde
-// bien à minuit chez l'utilisateur).
-export function dateDuJour() {
-  const d = new Date();
+// bien à minuit chez l'utilisateur). `d` injectable (date du jour par
+// défaut) : la programmation des rappels (js/notifications.js) l'applique à
+// chacun des jours à venir.
+export function dateDuJour(d = new Date()) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const jj = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mm}-${jj}`;
