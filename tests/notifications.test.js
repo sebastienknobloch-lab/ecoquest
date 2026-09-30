@@ -18,7 +18,6 @@ import {
   compterOuvertures,
   statistiquesNotifications,
   JOURNAL_RAPPEL_MAX,
-  CONTENU_RAPPEL_PAR_DEFAUT,
 } from "../js/notifications.js";
 import { selectionDuJour } from "../js/gamification.js";
 import { dateDuJour } from "../js/state.js";
@@ -132,14 +131,13 @@ const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant
 }
 
 // genererContenuRappel : cite toujours le libellé du geste et son bénéfice
-// concret (co2_evite_g), jamais le texte générique par défaut
+// concret (co2_evite_g)
 {
   for (let i = 0; i < 10; i++) {
     const contenu = genererContenuRappel(gesteTest, () => i / 10);
     assert.ok(contenu.body.includes(gesteTest.libelle), `variante ${i} : geste cité`);
     assert.ok(contenu.body.includes(String(gesteTest.co2_evite_g)), `variante ${i} : chiffre cité`);
     assert.ok(contenu.body.includes("estimation"), `variante ${i} : présenté comme une estimation`);
-    assert.notEqual(contenu.body, CONTENU_RAPPEL_PAR_DEFAUT.body, `variante ${i} : jamais le texte générique`);
   }
 }
 
@@ -219,11 +217,23 @@ const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant
   assert.ok(!contenu2.body.includes(geste1.libelle));
 }
 
-// contenuRappelPourAujourdhui : sans catégories prioritaires ni catalogue
-// disponible, replie sur le contenu générique plutôt que de planter
+// contenuRappelPourAujourdhui : catalogue vide ou absent -> null, jamais
+// de contenu générique (l'appelant ne programme alors aucun rappel)
 {
-  assert.deepEqual(contenuRappelPourAujourdhui([], {}), CONTENU_RAPPEL_PAR_DEFAUT);
-  assert.deepEqual(contenuRappelPourAujourdhui(null, {}), CONTENU_RAPPEL_PAR_DEFAUT);
+  assert.equal(contenuRappelPourAujourdhui([], {}), null);
+  assert.equal(contenuRappelPourAujourdhui(null, {}), null);
+}
+
+// contenuRappelPourAujourdhui : catalogue présent -> contenu citant le
+// libellé et le chiffre du geste du jour
+{
+  const state = { onboarding: { categoriesPrioritaires: [] } };
+  const dateISO = "2026-09-30";
+  const attendu = gesteDuRappel(gestes, dateISO, []);
+  const contenu = contenuRappelPourAujourdhui(gestes, state, () => 0, dateISO);
+  assert.ok(contenu.title);
+  assert.ok(contenu.body.includes(attendu.libelle));
+  assert.ok(contenu.body.includes(String(attendu.co2_evite_g)));
 }
 
 // avecDelaiMax : une promesse qui résout avant le délai renvoie sa valeur normalement
