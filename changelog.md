@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-30 — Correctif : le journal des rappels survit aux réglages successifs depuis Profil
+
+- Bug : `js/views/profil.js` persiste depuis sa copie locale de l'état, qui ne contient pas l'entrée que `suivreReglageRappel()` vient d'ajouter à `state.notifications.journalRappel` lors du `persist()` précédent. Deux réglages de suite effaçaient donc une entrée : désactiver puis réactiver -> l'entrée « désactivé » disparaissait ; 19:00 -> 08:00 -> 21:30 -> l'entrée 08:00 disparaissait. `compterRappelsEnvoyes()` comptait alors des envois pendant une extinction, et le taux d'action du jalon S38 était faussé. Même risque pour `state.notifications.ouvertures`.
+- `js/notifications.js` : nouvelle fonction pure `fusionnerJournauxNotifications(etatActuel, etatSuivant)`. `ouvertures` et `journalRappel` sont l'union de l'état courant et de l'état envoyé (doublons retirés, ordre chronologique, plafonds `OUVERTURES_MAX` et `JOURNAL_RAPPEL_MAX` conservés). Une nouvelle ouverture envoyée par l'appelant est bien gardée.
+- `js/app.js` : `persist()` applique cette fusion avant `suivreReglageRappel()` (comme pour `erreurs` depuis le correctif du 20/09), pour que le nouveau réglage soit comparé à la vraie dernière entrée.
+- Effet de bord assumé : un import de sauvegarde garde aussi les entrées de journal déjà présentes sur l'appareil (aucune perte de données).
+- `sw.js` : cache renommé `ecoquest-shell-v33`.
+- Test (`tests/notifications.test.js`) : deux `persist()` successifs depuis une copie périmée de la vue (désactiver/réactiver, 19:00 -> 08:00 -> 21:30), une ouverture ajoutée entre deux rendus, plafond après fusion.
+
 ## 2026-09-30 — Correctif : jamais de rappel au contenu générique
 
 - Bug : `contenuRappelPourAujourdhui()` renvoyait un texte générique (`CONTENU_RAPPEL_PAR_DEFAUT`, « Ton geste du jour t'attend ») quand le catalogue était vide. Deux cas réels : l'interrupteur de Profil basculé avant la fin du chargement de `data/gestes.json`, et un échec réseau sur l'écran de permission. Le rappel était alors programmé chaque jour avec ce texte, contraire à la règle « contenu toujours spécifique » de `CLAUDE.md`.

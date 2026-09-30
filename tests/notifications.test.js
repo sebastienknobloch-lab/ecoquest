@@ -18,6 +18,7 @@ import {
   compterOuvertures,
   statistiquesNotifications,
   JOURNAL_RAPPEL_MAX,
+  fusionnerJournauxNotifications,
 } from "../js/notifications.js";
 import { selectionDuJour } from "../js/gamification.js";
 import { dateDuJour } from "../js/state.js";
@@ -369,4 +370,54 @@ const entree = (date, actif, heure = "19:00") => ({ le: date.toISOString(), acti
   assert.deepEqual(statistiquesNotifications({ notifications: {} }, 7, local(24, 20)), { envoyees: 0, ouvertes: 0, tauxAction: null });
   const trop = { notifications: { journalRappel: [entree(local(24, 10), true)], ouvertures: etat.notifications.ouvertures } };
   assert.equal(statistiquesNotifications(trop, 7, local(24, 20)).tauxAction, 1);
+}
+
+// fusionnerJournauxNotifications : même enchaînement que persist() (js/app.js).
+{
+  const persister = (actuel, suivant, maintenant) =>
+    suivreReglageRappel(fusionnerJournauxNotifications(actuel, suivant), maintenant);
+  const t = (h) => new Date(Date.UTC(2026, 8, 30, h));
+  const reglage = (etat, actif, heure) => ({
+    ...etat,
+    onboarding: { ...etat.onboarding, heureRappel: heure },
+    notifications: { ...etat.notifications, actif },
+  });
+
+  // Rendu de Profil : rappel actif à 19:00, journal à une entrée.
+  let app = { onboarding: { heureRappel: "19:00" }, notifications: { actif: true, journalRappel: [entree(t(8), true)], ouvertures: [] } };
+  const copieVue = app;
+
+  // 1er réglage (désactivation) : persist() ajoute l'entrée « désactivé ».
+  app = persister(app, reglage(copieVue, false, "19:00"), t(9));
+  assert.equal(app.notifications.journalRappel.length, 2);
+
+  // 2e réglage depuis la copie périmée de la vue (réactivation) : l'entrée
+  // « désactivé » survit, et la réactivation est bien notée.
+  app = persister(app, reglage(copieVue, true, "19:00"), t(10));
+  assert.deepEqual(
+    app.notifications.journalRappel.map((e) => e.actif),
+    [true, false, true]
+  );
+
+  // 19:00 -> 08:00 -> 21:30 depuis la même copie : l'entrée 08:00 survit.
+  let app2 = { onboarding: { heureRappel: "19:00" }, notifications: { actif: true, journalRappel: [entree(t(8), true)], ouvertures: [] } };
+  const copie2 = app2;
+  app2 = persister(app2, reglage(copie2, true, "08:00"), t(9));
+  app2 = persister(app2, reglage(copie2, true, "21:30"), t(10));
+  assert.deepEqual(app2.notifications.journalRappel.map((e) => e.heure), ["19:00", "08:00", "21:30"]);
+
+  // Une ouverture ajoutée entre deux rendus survit aussi, et une nouvelle
+  // ouverture envoyée par l'appelant est bien ajoutée.
+  const avecOuverture = enregistrerOuvertureDepuisNotification(app, 1, t(11));
+  const apres = persister(avecOuverture, { ...copieVue, activeTab: "profil" }, t(12));
+  assert.equal(apres.notifications.ouvertures.length, 1);
+  assert.equal(apres.activeTab, "profil");
+  const encore = persister(apres, enregistrerOuvertureDepuisNotification(apres, 2, t(13)), t(13));
+  assert.deepEqual(encore.notifications.ouvertures.map((o) => o.notificationId), [1, 2]);
+
+  // Plafond conservé après fusion.
+  const plein = Array.from({ length: OUVERTURES_MAX }, (_, i) => ({ le: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString(), notificationId: i }));
+  const fusion = fusionnerJournauxNotifications({ notifications: { ouvertures: plein } }, { notifications: { ouvertures: [{ le: t(1).toISOString(), notificationId: 999 }] } });
+  assert.equal(fusion.notifications.ouvertures.length, OUVERTURES_MAX);
+  assert.equal(fusion.notifications.ouvertures.at(-1).notificationId, 999);
 }
