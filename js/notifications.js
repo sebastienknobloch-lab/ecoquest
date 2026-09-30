@@ -24,11 +24,6 @@ const LOCAL_NOTIFICATIONS_MODULE_URLS = [
 // toujours la même notification plutôt que d'en empiler une nouvelle.
 const ID_RAPPEL_QUOTIDIEN = 1;
 
-export const CONTENU_RAPPEL_PAR_DEFAUT = {
-  title: "EcoQuest",
-  body: "Ton geste du jour t'attend 🌱",
-};
-
 // "HH:MM" -> { heure, minute }. Ne valide pas le format : la seule source de
 // heureRappel est un <input type="time">, garanti bien formé (js/state.js).
 export function parserHeure(heureRappel) {
@@ -120,7 +115,12 @@ export async function annulerRappelQuotidien() {
 // système (Android reprogramme lui-même l'occurrence suivante après chaque
 // déclenchement) plutôt que de reprogrammer un `at` unique à chaque ouverture
 // de l'app — plus robuste si l'app reste fermée plusieurs jours.
-export async function programmerRappelQuotidien(heureRappel, contenu = CONTENU_RAPPEL_PAR_DEFAUT) {
+//
+// Aucun contenu par défaut : sans titre ni texte (catalogue indisponible,
+// voir contenuRappelPourAujourdhui), rien n'est programmé plutôt qu'un
+// rappel générique.
+export async function programmerRappelQuotidien(heureRappel, contenu) {
+  if (!contenu?.title || !contenu?.body) return false;
   const { plugin: LocalNotifications } = await chargerPlugin();
   if (!LocalNotifications) return false;
 
@@ -133,8 +133,8 @@ export async function programmerRappelQuotidien(heureRappel, contenu = CONTENU_R
         notifications: [
           {
             id: ID_RAPPEL_QUOTIDIEN,
-            title: contenu.title || CONTENU_RAPPEL_PAR_DEFAUT.title,
-            body: contenu.body || CONTENU_RAPPEL_PAR_DEFAUT.body,
+            title: contenu.title,
+            body: contenu.body,
             schedule: { on: { hour: heure, minute }, repeats: true },
           },
         ],
@@ -174,9 +174,7 @@ export async function demanderPermissionNotifications() {
 
 // --- Contenu variable du rappel (session 31) ---
 //
-// CONTENU_RAPPEL_PAR_DEFAUT ci-dessus ne sert plus que de repli technique
-// (plugin indisponible avant tout chargement des gestes). Le rappel
-// réellement programmé (branchement en session 32) doit toujours citer le
+// Le rappel programmé doit toujours citer le
 // geste du jour et son bénéfice concret — jamais un texte générique (voir
 // CLAUDE.md, économie de la permission notification). Les 10 variantes
 // ci-dessous ne changent que la formulation : le fond (quel geste, quel
@@ -255,14 +253,15 @@ export function peutActiverRappel(state) {
 // Compose le contenu du rappel pour aujourd'hui à partir d'un catalogue déjà
 // chargé par la vue appelante (écran de permission, Profil) : même geste que
 // celui affiché sur l'écran Aujourd'hui pour les mêmes catégories
-// prioritaires (voir gesteDuRappel ci-dessus). Repli sur
-// CONTENU_RAPPEL_PAR_DEFAUT si le catalogue n'est pas (encore) disponible,
-// plutôt que d'empêcher la programmation du rappel. `dateISO` injectable
+// prioritaires (voir gesteDuRappel ci-dessus). Renvoie null si le catalogue
+// n'est pas (encore) disponible ou si aucun geste n'est trouvé : l'appelant
+// ne programme alors rien, jamais de rappel générique (la reprogrammation
+// au prochain démarrage, js/app.js, s'en chargera). `dateISO` injectable
 // pour les tests (date du jour par défaut).
 export function contenuRappelPourAujourdhui(gestes, state, alea = Math.random, dateISO = dateDuJour()) {
-  if (!gestes || gestes.length === 0) return CONTENU_RAPPEL_PAR_DEFAUT;
+  if (!gestes || gestes.length === 0) return null;
   const geste = gesteDuRappel(gestes, dateISO, state.onboarding?.categoriesPrioritaires || []);
-  return geste ? genererContenuRappel(geste, alea) : CONTENU_RAPPEL_PAR_DEFAUT;
+  return geste ? genererContenuRappel(geste, alea) : null;
 }
 
 // --- Ouverture de l'app depuis une notification (session 33) ---

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-30 — Correctif : jamais de rappel au contenu générique
+
+- Bug : `contenuRappelPourAujourdhui()` renvoyait un texte générique (`CONTENU_RAPPEL_PAR_DEFAUT`, « Ton geste du jour t'attend ») quand le catalogue était vide. Deux cas réels : l'interrupteur de Profil basculé avant la fin du chargement de `data/gestes.json`, et un échec réseau sur l'écran de permission. Le rappel était alors programmé chaque jour avec ce texte, contraire à la règle « contenu toujours spécifique » de `CLAUDE.md`.
+- `js/notifications.js` : `contenuRappelPourAujourdhui()` renvoie `null` si le catalogue est vide ou si aucun geste du jour n'est trouvé. `CONTENU_RAPPEL_PAR_DEFAUT` est supprimé : plus aucun usage légitime. `programmerRappelQuotidien()` n'a plus de contenu par défaut et ne programme rien sans titre ni texte (renvoie `false`).
+- `js/views/profil.js` et `js/views/permission-notifications.js` : si le contenu vaut `null`, le réglage (`state.notifications.actif`) est bien enregistré, mais aucun rappel n'est programmé. La reprogrammation au prochain démarrage (`js/app.js`) s'en charge. `js/app.js` fait la même vérification.
+- `sw.js` : cache renommé `ecoquest-shell-v32`.
+- Tests (`tests/notifications.test.js`) : catalogue vide -> `null` ; catalogue présent -> contenu citant le libellé et le chiffre du geste du jour.
+
 ## 2026-09-30 — Correctif : le rappel quotidien cite le geste du jour
 
 - Bug : le rappel n'était programmé qu'une fois (`schedule.on` + `repeats: true`). Android répète le même titre et le même texte, donc dès le lendemain le rappel citait un geste qui n'était plus le geste du jour (`selectionDuJour` dépend de la date).

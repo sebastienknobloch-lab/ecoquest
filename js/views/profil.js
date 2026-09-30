@@ -244,7 +244,10 @@ export function renderProfil(container, state, persist) {
       persist(nouvelEtat);
       state = nouvelEtat;
       if (actif) {
-        await programmerRappelQuotidien(heureRappel, contenuRappelPourAujourdhui(catalogueGestes, state));
+        // Catalogue pas encore chargé : le réglage est enregistré ci-dessus,
+        // le rappel sera programmé au prochain démarrage (js/app.js).
+        const contenu = contenuRappelPourAujourdhui(catalogueGestes, state);
+        if (contenu) await programmerRappelQuotidien(heureRappel, contenu);
       } else {
         await annulerRappelQuotidien();
       }

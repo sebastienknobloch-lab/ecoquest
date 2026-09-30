@@ -225,7 +225,8 @@ async function reprogrammerRappelAuDemarrage() {
   }
   if (!Array.isArray(gestes) || gestes.length === 0) return;
   const heureRappel = state.onboarding?.heureRappel || "19:00";
-  await programmerRappelQuotidien(heureRappel, contenuRappelPourAujourdhui(gestes, state));
+  const contenu = contenuRappelPourAujourdhui(gestes, state);
+  if (contenu) await programmerRappelQuotidien(heureRappel, contenu);
 }
 
 demarrer();

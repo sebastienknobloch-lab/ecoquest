@@ -71,11 +71,13 @@ export function renderPermissionNotifications(container, state, onTermine) {
     try {
       permissionAccordee = await demanderPermissionNotifications();
       if (permissionAccordee) {
+        // Catalogue indisponible : `actif` est tout de même enregistré par
+        // terminer(), le rappel sera programmé au prochain démarrage.
         const gestes = await chargerCatalogue();
-        await programmerRappelQuotidien(
-          state.onboarding?.heureRappel || "19:00",
-          contenuRappelPourAujourdhui(gestes, state)
-        );
+        const contenu = contenuRappelPourAujourdhui(gestes, state);
+        if (contenu) {
+          await programmerRappelQuotidien(state.onboarding?.heureRappel || "19:00", contenu);
+        }
       }
     } catch {
       // On continue quand même : voir commentaire ci-dessus.
