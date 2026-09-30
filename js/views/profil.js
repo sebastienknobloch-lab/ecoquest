@@ -16,6 +16,7 @@ import {
 import { APP_VERSION } from "../version.js";
 import { activerConsoleDebug, surveillerTapsVersion } from "../debug.js";
 import { afficherEcranDebug } from "./debug.js";
+import { partagerOuTelecharger } from "../telechargement.js";
 
 // Isolé de tout accès DOM pour rester testable avec `node --test`.
 export function nomFichierExportEtat(maintenant = new Date()) {
@@ -23,41 +24,9 @@ export function nomFichierExportEtat(maintenant = new Date()) {
   return `ecoquest-sauvegarde-${iso}.json`;
 }
 
-// Sur Android, en PWA installée (mode standalone), le WebView n'ouvre pas
-// toujours le gestionnaire de téléchargements pour un lien <a download> vers
-// une blob: URL — le clic ne fait alors rien de visible. Le partage natif
-// (feuille de partage du système) fonctionne dans ce contexte-là, donc on le
-// tente en priorité ; le téléchargement classique reste utilisé quand le
-// partage de fichier n'est pas supporté (desktop, anciens navigateurs).
 async function exporterEtat(state, afficherMessage) {
-  const texte = exporterEtatJSON(state);
-  const nomFichier = nomFichierExportEtat();
-
-  if (navigator.share && navigator.canShare) {
-    try {
-      const fichier = new File([texte], nomFichier, { type: "application/json" });
-      if (navigator.canShare({ files: [fichier] })) {
-        await navigator.share({ files: [fichier], title: nomFichier });
-        return;
-      }
-    } catch (erreur) {
-      // Partage annulé par l'utilisateur : on n'enchaîne pas sur un
-      // téléchargement, ce serait surprenant après une annulation explicite.
-      if (erreur && erreur.name === "AbortError") return;
-    }
-  }
-
-  try {
-    const blob = new Blob([texte], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const lien = document.createElement("a");
-    lien.href = url;
-    lien.download = nomFichier;
-    document.body.append(lien);
-    lien.click();
-    lien.remove();
-    URL.revokeObjectURL(url);
-  } catch {
+  const resultat = await partagerOuTelecharger(exporterEtatJSON(state), nomFichierExportEtat());
+  if (resultat === "echec") {
     afficherMessage?.(
       "Le téléchargement n'a pas fonctionné sur cet appareil. Réessaie depuis Chrome, hors de l'application installée.",
       true

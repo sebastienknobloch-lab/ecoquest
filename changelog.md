@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-30 — Correctif : l'export des erreurs de debug fonctionne en PWA installée
+
+- Bug : `exporterErreurs()` (`js/views/debug.js`) n'utilisait qu'un lien `<a download>` vers une blob: URL, le chemin dont le correctif du 20/09 a établi qu'il ne produit rien sur Android en PWA installée. Et en cas d'échec, l'écran ne disait rien.
+- Nouveau `js/telechargement.js` : `partagerOuTelecharger(texte, nomFichier)` reprend à l'identique le chemin validé côté Profil (partage natif d'un fichier en priorité, repli `<a download>`, pas de repli après une annulation `AbortError`) et renvoie `"partage"`, `"annule"`, `"telecharge"` ou `"echec"`.
+- `js/views/profil.js` : `exporterEtat()` utilise cette fonction ; même message d'erreur qu'avant, comportement inchangé.
+- `js/views/debug.js` : `exporterErreurs()` utilise cette fonction et affiche un message d'erreur visible sous les boutons si l'export échoue.
+- `nomFichierExport()` et `nomFichierExportEtat()` restent à leur place, tests inchangés et au vert.
+- `sw.js` : `js/telechargement.js` ajouté à l'app shell, cache renommé `ecoquest-shell-v34`.
+- Nouveau test `tests/telechargement.test.js` : partage, annulation sans repli, repli après échec du partage ou sans support, échec total.
+
 ## 2026-09-30 — Correctif : le journal des rappels survit aux réglages successifs depuis Profil
 
 - Bug : `js/views/profil.js` persiste depuis sa copie locale de l'état, qui ne contient pas l'entrée que `suivreReglageRappel()` vient d'ajouter à `state.notifications.journalRappel` lors du `persist()` précédent. Deux réglages de suite effaçaient donc une entrée : désactiver puis réactiver -> l'entrée « désactivé » disparaissait ; 19:00 -> 08:00 -> 21:30 -> l'entrée 08:00 disparaissait. `compterRappelsEnvoyes()` comptait alors des envois pendant une extinction, et le taux d'action du jalon S38 était faussé. Même risque pour `state.notifications.ouvertures`.
