@@ -202,6 +202,23 @@ const gesteTest = { id: "geste-test", libelle: "Éteindre la lumière en sortant
   assert.ok(contenu.body.includes(String(attendu.co2_evite_g)));
 }
 
+// contenuRappelPourAujourdhui : deux dates différentes, deux gestes cités
+// différents — c'est pourquoi le rappel (répété à l'identique par Android)
+// est reprogrammé à chaque démarrage de l'app (js/app.js)
+{
+  const state = { onboarding: { categoriesPrioritaires: [] } };
+  const [jour1, jour2] = ["2026-09-30", "2026-10-01"];
+  const geste1 = gesteDuRappel(gestes, jour1, []);
+  const geste2 = gesteDuRappel(gestes, jour2, []);
+  assert.notEqual(geste1.id, geste2.id);
+  const contenu1 = contenuRappelPourAujourdhui(gestes, state, () => 0.5, jour1);
+  const contenu2 = contenuRappelPourAujourdhui(gestes, state, () => 0.5, jour2);
+  assert.ok(contenu1.body.includes(geste1.libelle));
+  assert.ok(contenu2.body.includes(geste2.libelle));
+  assert.ok(!contenu1.body.includes(geste2.libelle));
+  assert.ok(!contenu2.body.includes(geste1.libelle));
+}
+
 // contenuRappelPourAujourdhui : sans catégories prioritaires ni catalogue
 // disponible, replie sur le contenu générique plutôt que de planter
 {

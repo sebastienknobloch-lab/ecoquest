@@ -257,10 +257,11 @@ export function peutActiverRappel(state) {
 // celui affiché sur l'écran Aujourd'hui pour les mêmes catégories
 // prioritaires (voir gesteDuRappel ci-dessus). Repli sur
 // CONTENU_RAPPEL_PAR_DEFAUT si le catalogue n'est pas (encore) disponible,
-// plutôt que d'empêcher la programmation du rappel.
-export function contenuRappelPourAujourdhui(gestes, state, alea = Math.random) {
+// plutôt que d'empêcher la programmation du rappel. `dateISO` injectable
+// pour les tests (date du jour par défaut).
+export function contenuRappelPourAujourdhui(gestes, state, alea = Math.random, dateISO = dateDuJour()) {
   if (!gestes || gestes.length === 0) return CONTENU_RAPPEL_PAR_DEFAUT;
-  const geste = gesteDuRappel(gestes, dateDuJour(), state.onboarding?.categoriesPrioritaires || []);
+  const geste = gesteDuRappel(gestes, dateISO, state.onboarding?.categoriesPrioritaires || []);
   return geste ? genererContenuRappel(geste, alea) : CONTENU_RAPPEL_PAR_DEFAUT;
 }
 

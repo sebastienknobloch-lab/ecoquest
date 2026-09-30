@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-30 — Correctif : le rappel quotidien cite le geste du jour
+
+- Bug : le rappel n'était programmé qu'une fois (`schedule.on` + `repeats: true`). Android répète le même titre et le même texte, donc dès le lendemain le rappel citait un geste qui n'était plus le geste du jour (`selectionDuJour` dépend de la date).
+- `js/app.js` : au démarrage, si `state.notifications.actif` est vrai, l'app recharge `data/gestes.json` et reprogramme le rappel à l'heure choisie avec le contenu du jour. Rappel inactif ou catalogue indisponible : rien n'est reprogrammé. Toujours un seul rappel : même identifiant, et `programmerRappelQuotidien()` annule avant de reprogrammer.
+- `js/notifications.js` : `contenuRappelPourAujourdhui()` accepte une date en 4e paramètre, optionnel (date du jour par défaut), pour les tests.
+- `sw.js` : cache renommé `ecoquest-shell-v31`.
+- Nouveau test dans `tests/notifications.test.js` : pour deux dates différentes, le contenu cite deux gestes différents.
+- Limite connue : si l'app n'est pas ouverte pendant plusieurs jours, le rappel garde le texte du dernier démarrage.
+
 ## 2026-09-24 — Session 34 : tableau de bord des notifications sur l'écran de debug
 
 - Écran de debug (`js/views/debug.js`) : nouvelle section « 🔔 Notifications » au-dessus des erreurs JS, avec un tableau 7 j / 30 j : rappels envoyés (estimation), ouvertures depuis une notification, taux d'action (ouvertures / envois, plafonné à 100 %). Un taux sous le seuil du jalon S38 (20 %) s'affiche en rouge. Une note indique depuis quand les envois sont suivis et le réglage actuel du rappel. Visible uniquement sur l'écran de debug, jamais ailleurs dans l'app : c'est le tableau de bord du propriétaire.
