@@ -10,6 +10,8 @@ import {
   enregistrerOuvertureDepuisNotification,
   ecouterOuverturesDepuisNotification,
   suivreReglageRappel,
+  programmerRappelQuotidien,
+  contenuRappelPourAujourdhui,
 } from "./notifications.js";
 import { debugDemandeParUrl, activerConsoleDebug } from "./debug.js";
 import { afficherEcranDebug } from "./views/debug.js";
@@ -205,7 +207,29 @@ installerGestionnaireErreurs(() => state, persist);
 // (l'écran de debug affiche la date de début du suivi).
 if (suivreReglageRappel(state) !== state) persist(state);
 
+// Le rappel est répété par Android avec le même title/body : sans
+// reprogrammation, il citerait dès le lendemain un geste qui n'est plus le
+// geste du jour (selectionDuJour est semée par la date). On le reprogramme
+// donc à chaque démarrage avec le contenu du jour. Même identifiant, et
+// programmerRappelQuotidien annule avant de reprogrammer : jamais deux
+// rappels. Rappel inactif ou catalogue indisponible : on ne touche à rien.
+async function reprogrammerRappelAuDemarrage() {
+  if (state.notifications?.actif !== true) return;
+  let gestes;
+  try {
+    const reponse = await fetch("data/gestes.json");
+    if (!reponse.ok) throw new Error("gestes.json indisponible");
+    gestes = await reponse.json();
+  } catch {
+    return;
+  }
+  if (!Array.isArray(gestes) || gestes.length === 0) return;
+  const heureRappel = state.onboarding?.heureRappel || "19:00";
+  await programmerRappelQuotidien(heureRappel, contenuRappelPourAujourdhui(gestes, state));
+}
+
 demarrer();
+reprogrammerRappelAuDemarrage();
 ecouterOuverturesDepuisNotification(surOuvertureDepuisNotification);
 initServiceWorker();
 
