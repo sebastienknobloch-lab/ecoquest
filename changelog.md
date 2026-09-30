@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-30 — Nettoyage : copie morte de `surOuvertureDepuisNotification` retirée de `mettreAJourOngletActif()`
+
+- Artefact de merge des sessions 33/34 : `mettreAJourOngletActif()` (`js/app.js`) contenait une copie imbriquée complète de `surOuvertureDepuisNotification` (commentaire compris), jamais appelée. C'est la version de portée module qui est passée à `ecouterOuverturesDepuisNotification()`.
+- Copie imbriquée supprimée : la fonction ne contient plus que sa boucle `tabButtons.forEach` (indentation rétablie). La version de portée module est inchangée.
+- Aucun changement de comportement. `node --check` passait déjà, d'où l'absence de signal en CI. Tests au vert.
+
 ## 2026-09-30 — Correctif : l'export des erreurs de debug fonctionne en PWA installée
 
 - Bug : `exporterErreurs()` (`js/views/debug.js`) n'utilisait qu'un lien `<a download>` vers une blob: URL, le chemin dont le correctif du 20/09 a établi qu'il ne produit rien sur Android en PWA installée. Et en cas d'échec, l'écran ne disait rien.

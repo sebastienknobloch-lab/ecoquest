@@ -88,19 +88,7 @@ function persisterDepuisVue(nextState) {
 }
 
 function mettreAJourOngletActif() {
-  // Ouverture depuis une notification (session 33) : on l'enregistre (taux
-// d'action, session 34) et on affiche directement l'écran Aujourd'hui, geste
-// du rappel mis en avant. Pendant l'onboarding (cas théorique : aucun rappel
-// n'est programmé avant), on enregistre sans interrompre l'écran en cours.
-function surOuvertureDepuisNotification(notificationId) {
-  persist(enregistrerOuvertureDepuisNotification(state, notificationId));
-  if (!viewRoot || !state.onboarding?.termine) return;
-  if (tabBar) tabBar.hidden = false;
-  if (afficherPermissionSiNecessaire()) return;
-  afficherVueActive({ mettreEnAvantGesteDuRappel: true });
-}
-
-tabButtons.forEach((btn) => {
+  tabButtons.forEach((btn) => {
     const actif = btn.dataset.tab === state.activeTab;
     btn.classList.toggle("active", actif);
     btn.setAttribute("aria-current", actif ? "page" : "false");
